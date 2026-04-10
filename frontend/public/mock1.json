@@ -1,0 +1,144 @@
+{
+  "source_language": "ja",
+  "target_language": "en",
+  "total_duration_seconds": 60.0,
+  "speakers": [
+    {
+      "speaker_id": "s1",
+      "label": "Narrator"
+    }
+  ],
+  "segments": [
+    {
+      "id": 1,
+      "start_seconds": 4.0,
+      "end_seconds": 18.0,
+      "raw_text": "皆さん、こんにちは。ここはスーパーです。買い物の前に牛乳パックなど、リサイクルの物を出します。",
+      "words": [
+        { "text": "皆さん", "reading": "みなさん", "romanization": "minna-san" },
+        { "text": "こんにちは", "reading": "こんにちは", "romanization": "konnichiwa" },
+        { "text": "ここ", "reading": "ここ", "romanization": "koko" },
+        { "text": "は", "reading": "は", "romanization": "wa" },
+        { "text": "スーパー", "reading": "すーぱー", "romanization": "suupaa" },
+        { "text": "です", "reading": "です", "romanization": "desu" },
+        { "text": "買い物", "reading": "かいもの", "romanization": "kaimono" },
+        { "text": "の", "reading": "の", "romanization": "no" },
+        { "text": "前", "reading": "まえ", "romanization": "mae" },
+        { "text": "に", "reading": "に", "romanization": "ni" },
+        { "text": "牛乳", "reading": "ぎゅうにゅう", "romanization": "gyuunyuu" },
+        { "text": "パック", "reading": "ぱっく", "romanization": "pakku" },
+        { "text": "など", "reading": "など", "romanization": "nado" },
+        { "text": "リサイクル", "reading": "りさいくる", "romanization": "risaikuru" },
+        { "text": "の", "reading": "の", "romanization": "no" },
+        { "text": "物", "reading": "もの", "romanization": "mono" },
+        { "text": "を", "reading": "を", "romanization": "wo" },
+        { "text": "出し", "reading": "だし", "romanization": "dashi" },
+        { "text": "ます", "reading": "ます", "romanization": "masu" }
+      ],
+      "translation": "Hello everyone. This is a supermarket. Before shopping, I put out items for recycling, such as milk cartons.",
+      "speaker": { "speaker_id": "s1", "label": "Narrator" }
+    },
+    {
+      "id": 2,
+      "start_seconds": 24.0,
+      "end_seconds": 31.0,
+      "raw_text": "今日は、スーパーで買い物をしながら、日本のクリスマスについてお話します。",
+      "words": [
+        { "text": "今日", "reading": "きょう", "romanization": "kyou" },
+        { "text": "は", "reading": "は", "romanization": "wa" },
+        { "text": "スーパー", "reading": "すーぱー", "romanization": "suupaa" },
+        { "text": "で", "reading": "で", "romanization": "de" },
+        { "text": "買い物", "reading": "かいもの", "romanization": "kaimono" },
+        { "text": "を", "reading": "を", "romanization": "wo" },
+        { "text": "し", "reading": "し", "romanization": "shi" },
+        { "text": "ながら", "reading": "ながら", "romanization": "nagara" },
+        { "text": "日本", "reading": "にほん", "romanization": "nihon" },
+        { "text": "の", "reading": "の", "romanization": "no" },
+        { "text": "クリスマス", "reading": "くりすます", "romanization": "kurisumasu" },
+        { "text": "について", "reading": "について", "romanization": "nitsuite" },
+        { "text": "お話", "reading": "おはなし", "romanization": "ohanashi" },
+        { "text": "し", "reading": "し", "romanization": "shi" },
+        { "text": "ます", "reading": "ます", "romanization": "masu" }
+      ],
+      "translation": "Today, I'll talk about Christmas in Japan while shopping at the supermarket.",
+      "speaker": { "speaker_id": "s1", "label": "Narrator" }
+    },
+    {
+      "id": 3,
+      "start_seconds": 35.0,
+      "end_seconds": 47.0,
+      "raw_text": "ここにセール品が売っていますが、日本のスーパーは、大抵、野菜と果物のコーナーから始まります。",
+      "words": [
+        { "text": "ここ", "reading": "ここ", "romanization": "koko" },
+        { "text": "に", "reading": "に", "romanization": "ni" },
+        { "text": "セール", "reading": "せーる", "romanization": "seeru" },
+        { "text": "品", "reading": "ひん", "romanization": "hin" },
+        { "text": "が", "reading": "が", "romanization": "ga" },
+        { "text": "売っ", "reading": "うっ", "romanization": "u" },
+        { "text": "て", "reading": "て", "romanization": "te" },
+        { "text": "い", "reading": "い", "romanization": "i" },
+        { "text": "ます", "reading": "ます", "romanization": "masu" },
+        { "text": "が", "reading": "が", "romanization": "ga" },
+        { "text": "日本", "reading": "にほん", "romanization": "nihon" },
+        { "text": "の", "reading": "の", "romanization": "no" },
+        { "text": "スーパー", "reading": "すーぱー", "romanization": "suupaa" },
+        { "text": "は", "reading": "は", "romanization": "wa" },
+        { "text": "大抵", "reading": "たいてい", "romanization": "taitei" },
+        { "text": "野菜", "reading": "やさい", "romanization": "yasai" },
+        { "text": "と", "reading": "と", "romanization": "to" },
+        { "text": "果物", "reading": "くだもの", "romanization": "kudamono" },
+        { "text": "の", "reading": "の", "romanization": "no" },
+        { "text": "コーナー", "reading": "こーなー", "romanization": "koonaa" },
+        { "text": "から", "reading": "から", "romanization": "kara" },
+        { "text": "始まり", "reading": "はじまり", "romanization": "hajimari" },
+        { "text": "ます", "reading": "ます", "romanization": "masu" }
+      ],
+      "translation": "There are sale items here, but Japanese supermarkets usually start with the vegetable and fruit section.",
+      "speaker": { "speaker_id": "s1", "label": "Narrator" }
+    },
+    {
+      "id": 4,
+      "start_seconds": 49.0,
+      "end_seconds": 52.0,
+      "raw_text": "皆さんの国のスーパーは、どうですか？",
+      "words": [
+        { "text": "皆さん", "reading": "みなさん", "romanization": "minna-san" },
+        { "text": "の", "reading": "の", "romanization": "no" },
+        { "text": "国", "reading": "くに", "romanization": "kuni" },
+        { "text": "の", "reading": "の", "romanization": "no" },
+        { "text": "スーパー", "reading": "すーぱー", "romanization": "suupaa" },
+        { "text": "は", "reading": "は", "romanization": "wa" },
+        { "text": "どう", "reading": "どう", "romanization": "dou" },
+        { "text": "です", "reading": "です", "romanization": "desu" },
+        { "text": "か", "reading": "か", "romanization": "ka" }
+      ],
+      "translation": "How about the supermarkets in your country?",
+      "speaker": { "speaker_id": "s1", "label": "Narrator" }
+    },
+    {
+      "id": 5,
+      "start_seconds": 54.0,
+      "end_seconds": 59.0,
+      "raw_text": "私の右手は、山梨県で採れた野菜が売っています。",
+      "words": [
+        { "text": "私", "reading": "わたし", "romanization": "watashi" },
+        { "text": "の", "reading": "の", "romanization": "no" },
+        { "text": "右手", "reading": "みぎて", "romanization": "migite" },
+        { "text": "は", "reading": "は", "romanization": "wa" },
+        { "text": "山梨", "reading": "やまなし", "romanization": "yamanashi" },
+        { "text": "県", "reading": "けん", "romanization": "ken" },
+        { "text": "で", "reading": "で", "romanization": "de" },
+        { "text": "採れ", "reading": "とれ", "romanization": "tore" },
+        { "text": "た", "reading": "た", "romanization": "ta" },
+        { "text": "野菜", "reading": "やさい", "romanization": "yasai" },
+        { "text": "が", "reading": "が", "romanization": "ga" },
+        { "text": "売っ", "reading": "うっ", "romanization": "u" },
+        { "text": "て", "reading": "て", "romanization": "te" },
+        { "text": "い", "reading": "い", "romanization": "i" },
+        { "text": "ます", "reading": "ます", "romanization": "masu" }
+      ],
+      "translation": "To my right, vegetables grown in Yamanashi Prefecture are being sold.",
+      "speaker": { "speaker_id": "s1", "label": "Narrator" }
+    }
+  ]
+}

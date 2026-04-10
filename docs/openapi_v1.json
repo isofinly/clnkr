@@ -1,0 +1,142 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Transcript Segment API",
+    "version": "1.0.0",
+    "description": "Structured LLM output for transcribed audio with word-level annotations"
+  },
+  "components": {
+    "schemas": {
+      "Word": {
+        "type": "object",
+        "required": ["text", "reading", "romanization"],
+        "properties": {
+          "text": {
+            "type": "string",
+            "description": "Surface form of the word as spoken",
+            "example": "感覚"
+          },
+          "reading": {
+            "type": "string",
+            "description": "Kana reading of the word (hiragana/katakana)",
+            "example": "かんかく"
+          },
+          "romanization": {
+            "type": "string",
+            "description": "Romanized pronunciation (e.g. Hepburn for Japanese)",
+            "example": "kankaku"
+          }
+        }
+      },
+      "Speaker": {
+        "type": "object",
+        "required": ["speaker_id", "label"],
+        "properties": {
+          "speaker_id": {
+            "type": "string",
+            "description": "Unique identifier for the speaker",
+            "example": "spk_1"
+          },
+          "label": {
+            "type": "string",
+            "description": "Human-readable speaker label",
+            "example": "Speaker 1"
+          }
+        }
+      },
+      "Segment": {
+        "type": "object",
+        "required": [
+          "id",
+          "start_seconds",
+          "end_seconds",
+          "raw_text",
+          "words",
+          "translation",
+          "speaker"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Zero-based segment index",
+            "example": 0
+          },
+          "start_seconds": {
+            "type": "number",
+            "format": "float",
+            "description": "Segment start time in seconds from audio beginning",
+            "example": 0
+          },
+          "end_seconds": {
+            "type": "number",
+            "format": "float",
+            "description": "Segment end time in seconds from audio beginning",
+            "example": 4.8
+          },
+          "raw_text": {
+            "type": "string",
+            "description": "Unsegmented original text of the segment",
+            "example": "感覚をシェアした"
+          },
+          "words": {
+            "type": "array",
+            "description": "Ordered list of words with readings and romanizations",
+            "items": {
+              "$ref": "#/components/schemas/Word"
+            }
+          },
+          "translation": {
+            "type": "string",
+            "description": "Full English translation of the segment",
+            "example": "shared the feeling"
+          },
+          "speaker": {
+            "$ref": "#/components/schemas/Speaker"
+          }
+        }
+      },
+      "Transcript": {
+        "type": "object",
+        "required": [
+          "source_language",
+          "target_language",
+          "total_duration_seconds",
+          "speakers",
+          "segments"
+        ],
+        "properties": {
+          "source_language": {
+            "type": "string",
+            "description": "BCP-47 language tag of the spoken language",
+            "example": "ja"
+          },
+          "target_language": {
+            "type": "string",
+            "description": "BCP-47 language tag of the translation language",
+            "example": "en"
+          },
+          "total_duration_seconds": {
+            "type": "number",
+            "format": "float",
+            "description": "Total audio duration in seconds",
+            "example": 1739
+          },
+          "speakers": {
+            "type": "array",
+            "description": "All speakers identified via diarization",
+            "items": {
+              "$ref": "#/components/schemas/Speaker"
+            }
+          },
+          "segments": {
+            "type": "array",
+            "description": "Chronologically ordered transcript segments",
+            "items": {
+              "$ref": "#/components/schemas/Segment"
+            }
+          }
+        }
+      }
+    }
+  }
+}

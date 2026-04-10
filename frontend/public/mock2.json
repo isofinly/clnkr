@@ -1,0 +1,340 @@
+{
+  "source_language": "ja",
+  "target_language": "en",
+  "total_duration_seconds": 60.0,
+  "speakers": [
+    {
+      "speaker_id": "s1",
+      "label": "深井 龍之介"
+    },
+    {
+      "speaker_id": "s2",
+      "label": "樋口 聖典"
+    },
+    {
+      "speaker_id": "s3",
+      "label": "ヤン"
+    }
+  ],
+  "segments": [
+    {
+      "id": 1,
+      "start_seconds": 0.0,
+      "end_seconds": 3.2,
+      "raw_text": "はい、それでは、古典ラジオ番外編を始めたいと思います。",
+      "words": [
+        { "text": "はい", "reading": "はい", "romanization": "hai" },
+        { "text": "それでは", "reading": "それでは", "romanization": "soredewa" },
+        { "text": "古典", "reading": "こてん", "romanization": "koten" },
+        { "text": "ラジオ", "reading": "らじお", "romanization": "rajio" },
+        { "text": "番外編", "reading": "ばんがいへん", "romanization": "bangaihen" },
+        { "text": "を", "reading": "を", "romanization": "wo" },
+        { "text": "始め", "reading": "はじめ", "romanization": "hajime" },
+        { "text": "たい", "reading": "たい", "romanization": "tai" },
+        { "text": "と", "reading": "と", "romanization": "to" },
+        { "text": "思い", "reading": "おもい", "romanization": "omoi" },
+        { "text": "ます", "reading": "ます", "romanization": "masu" }
+      ],
+      "translation": "Alright, then, I'd like to start the Coten Radio extra edition.",
+      "speaker": {
+        "speaker_id": "s1",
+        "label": "深井 龍之介"
+      }
+    },
+    {
+      "id": 2,
+      "start_seconds": 3.2,
+      "end_seconds": 3.8,
+      "raw_text": "はい。はい。",
+      "words": [
+        { "text": "はい", "reading": "はい", "romanization": "hai" },
+        { "text": "はい", "reading": "はい", "romanization": "hai" }
+      ],
+      "translation": "Okay. Yes.",
+      "speaker": {
+        "speaker_id": "s2",
+        "label": "樋口 聖典"
+      }
+    },
+    {
+      "id": 3,
+      "start_seconds": 3.8,
+      "end_seconds": 7.5,
+      "raw_text": "ま、だから前回は、ツチノコの話を40分したんですよね。",
+      "words": [
+        { "text": "ま", "reading": "ま", "romanization": "ma" },
+        { "text": "だから", "reading": "だから", "romanization": "dakara" },
+        { "text": "前回", "reading": "ぜんかい", "romanization": "zenkai" },
+        { "text": "は", "reading": "は", "romanization": "wa" },
+        { "text": "ツチノコ", "reading": "つちのこ", "romanization": "tsuchinoko" },
+        { "text": "の", "reading": "の", "romanization": "no" },
+        { "text": "話", "reading": "はなし", "romanization": "hanashi" },
+        { "text": "を", "reading": "を", "romanization": "wo" },
+        { "text": "40分", "reading": "よんじゅっぷん", "romanization": "yonjuppun" },
+        { "text": "し", "reading": "し", "romanization": "shi" },
+        { "text": "た", "reading": "た", "romanization": "ta" },
+        { "text": "ん", "reading": "ん", "romanization": "n" },
+        { "text": "です", "reading": "です", "romanization": "desu" },
+        { "text": "よね", "reading": "よね", "romanization": "yone" }
+      ],
+      "translation": "Well, so last time, we spent 40 minutes talking about the Tsuchinoko, didn't we?",
+      "speaker": {
+        "speaker_id": "s2"
+      }
+    },
+    {
+      "id": 4,
+      "start_seconds": 7.5,
+      "end_seconds": 9.0,
+      "raw_text": "しましたね。",
+      "words": [
+        { "text": "し", "reading": "し", "romanization": "shi" },
+        { "text": "まし", "reading": "まし", "romanization": "mashi" },
+        { "text": "た", "reading": "た", "romanization": "ta" },
+        { "text": "ね", "reading": "ね", "romanization": "ne" }
+      ],
+      "translation": "We did.",
+      "speaker": {
+        "speaker_id": "s1",
+        "label": "深井 龍之介"
+      }
+    },
+    {
+      "id": 5,
+      "start_seconds": 9.0,
+      "end_seconds": 13.5,
+      "raw_text": "違うやろ！泰三と...ツチノコの話ではない。",
+      "words": [
+        { "text": "違う", "reading": "ちがう", "romanization": "chigau" },
+        { "text": "やろ", "reading": "やろ", "romanization": "yaro" },
+        { "text": "泰三", "reading": "たいぞう", "romanization": "taizou" },
+        { "text": "と", "reading": "と", "romanization": "to" },
+        { "text": "ツチノコ", "reading": "つちのこ", "romanization": "tsuchinoko" },
+        { "text": "の", "reading": "の", "romanization": "no" },
+        { "text": "話", "reading": "はなし", "romanization": "hanashi" },
+        { "text": "で", "reading": "で", "romanization": "de" },
+        { "text": "は", "reading": "は", "romanization": "wa" },
+        { "text": "ない", "reading": "ない", "romanization": "nai" }
+      ],
+      "translation": "No way! That was with Taizo... and it wasn't about Tsuchinoko.",
+      "speaker": {
+        "speaker_id": "s3",
+        "label": "ヤン"
+      }
+    },
+    {
+      "id": 6,
+      "start_seconds": 14.0,
+      "end_seconds": 16.0,
+      "raw_text": "で、何すか？何の感覚をシェアしたい...？",
+      "words": [
+        { "text": "で", "reading": "で", "romanization": "de" },
+        { "text": "何", "reading": "なん", "romanization": "nan" },
+        { "text": "す", "reading": "す", "romanization": "su" },
+        { "text": "か", "reading": "か", "romanization": "ka" },
+        { "text": "何", "reading": "なん", "romanization": "nan" },
+        { "text": "の", "reading": "の", "romanization": "no" },
+        { "text": "感覚", "reading": "かんかく", "romanization": "kankaku" },
+        { "text": "を", "reading": "を", "romanization": "wo" },
+        { "text": "シェア", "reading": "しぇあ", "romanization": "shea" },
+        { "text": "し", "reading": "し", "romanization": "shi" },
+        { "text": "たい", "reading": "たい", "romanization": "tai" }
+      ],
+      "translation": "So, what is it? What kind of feeling do you want to share...?",
+      "speaker": {
+        "speaker_id": "s2",
+        "label": "樋口 聖典"
+      }
+    },
+    {
+      "id": 7,
+      "start_seconds": 16.0,
+      "end_seconds": 28.5,
+      "raw_text": "いや、これはさ、何て言うか、こういう場じゃない限り僕もシェアもしなければ話もしないんだけど、せっかくだから、ちょっと一回場に出して皆で話してみたいなって思う感覚があるんだけど。",
+      "words": [
+        { "text": "いや", "reading": "いや", "romanization": "iya" },
+        { "text": "これ", "reading": "これ", "romanization": "kore" },
+        { "text": "は", "reading": "は", "romanization": "wa" },
+        { "text": "さ", "reading": "さ", "romanization": "sa" },
+        { "text": "何", "reading": "なん", "romanization": "nan" },
+        { "text": "て", "reading": "て", "romanization": "te" },
+        { "text": "言う", "reading": "いう", "romanization": "iu" },
+        { "text": "か", "reading": "か", "romanization": "ka" },
+        { "text": "こう", "reading": "こう", "romanization": "kou" },
+        { "text": "いう", "reading": "いう", "romanization": "iu" },
+        { "text": "場", "reading": "ば", "romanization": "ba" },
+        { "text": "じゃ", "reading": "じゃ", "romanization": "ja" },
+        { "text": "ない", "reading": "ない", "romanization": "nai" },
+        { "text": "限り", "reading": "かぎり", "romanization": "kagiri" },
+        { "text": "僕", "reading": "ぼく", "romanization": "boku" },
+        { "text": "も", "reading": "も", "romanization": "mo" },
+        { "text": "シェア", "reading": "しぇあ", "romanization": "shea" },
+        { "text": "も", "reading": "も", "romanization": "mo" },
+        { "text": "し", "reading": "し", "romanization": "shi" },
+        { "text": "なけれ", "reading": "なけれ", "romanization": "nakere" },
+        { "text": "ば", "reading": "ば", "romanization": "ba" },
+        { "text": "話", "reading": "はなし", "romanization": "hanashi" },
+        { "text": "も", "reading": "も", "romanization": "mo" },
+        { "text": "し", "reading": "し", "romanization": "shi" },
+        { "text": "ない", "reading": "ない", "romanization": "nai" },
+        { "text": "ん", "reading": "ん", "romanization": "n" },
+        { "text": "だ", "reading": "だ", "romanization": "da" },
+        { "text": "けど", "reading": "けど", "romanization": "kedo" },
+        { "text": "せっかく", "reading": "せっかく", "romanization": "sekkaku" },
+        { "text": "だ", "reading": "だ", "romanization": "da" },
+        { "text": "から", "reading": "から", "romanization": "kara" },
+        { "text": "ちょっと", "reading": "ちょっと", "romanization": "chotto" },
+        { "text": "一回", "reading": "いっかい", "romanization": "ikkai" },
+        { "text": "場", "reading": "ば", "romanization": "ba" },
+        { "text": "に", "reading": "に", "romanization": "ni" },
+        { "text": "出し", "reading": "だし", "romanization": "dashi" },
+        { "text": "て", "reading": "て", "romanization": "te" },
+        { "text": "皆", "reading": "みんな", "romanization": "minna" },
+        { "text": "で", "reading": "で", "romanization": "de" },
+        { "text": "話し", "reading": "はなし", "romanization": "hanashi" },
+        { "text": "て", "reading": "て", "romanization": "te" },
+        { "text": "み", "reading": "み", "romanization": "mi" },
+        { "text": "たい", "reading": "たい", "romanization": "tai" },
+        { "text": "な", "reading": "な", "romanization": "na" },
+        { "text": "って", "reading": "って", "romanization": "tte" },
+        { "text": "思う", "reading": "おもう", "romanization": "omou" },
+        { "text": "感覚", "reading": "かんかく", "romanization": "kankaku" },
+        { "text": "が", "reading": "が", "romanization": "ga" },
+        { "text": "ある", "reading": "ある", "romanization": "aru" },
+        { "text": "ん", "reading": "ん", "romanization": "n" },
+        { "text": "だ", "reading": "だ", "romanization": "da" },
+        { "text": "けど", "reading": "けど", "romanization": "kedo" }
+      ],
+      "translation": "Well, you see, it's like, unless it's in a setting like this, I wouldn't share it or even talk about it, but since we're here, I have this feeling that I want to put it out there and talk about it with everyone.",
+      "speaker": {
+        "speaker_id": "s3",
+        "label": "ヤン"
+      }
+    },
+    {
+      "id": 8,
+      "start_seconds": 29.0,
+      "end_seconds": 57.0,
+      "raw_text": "僕はほら、哲学とか歴史とかが、前回好きじゃない、それが好きなわけじゃないって言ったんだけど、まあ好きなわけですよね。好きじゃないですか。で、それについて思考深めたいとか思ってるわけですね、普段から。で、それがなかなかできないから本を読んでるわけじゃないですか。で、たまに、で、ほとんどの人とそういう話できないんですよね、まず。雑談とかで、じゃあ、哲学の話しましょうとか。",
+      "words": [
+        { "text": "僕", "reading": "ぼく", "romanization": "boku" },
+        { "text": "は", "reading": "は", "romanization": "wa" },
+        { "text": "ほら", "reading": "ほら", "romanization": "hora" },
+        { "text": "哲学", "reading": "てつがく", "romanization": "tetsugaku" },
+        { "text": "とか", "reading": "とか", "romanization": "toka" },
+        { "text": "歴史", "reading": "れきし", "romanization": "rekishi" },
+        { "text": "とか", "reading": "とか", "romanization": "toka" },
+        { "text": "が", "reading": "が", "romanization": "ga" },
+        { "text": "前回", "reading": "ぜんかい", "romanization": "zenkai" },
+        { "text": "好き", "reading": "すき", "romanization": "suki" },
+        { "text": "じゃ", "reading": "じゃ", "romanization": "ja" },
+        { "text": "ない", "reading": "ない", "romanization": "nai" },
+        { "text": "それ", "reading": "それ", "romanization": "sore" },
+        { "text": "が", "reading": "が", "romanization": "ga" },
+        { "text": "好き", "reading": "すき", "romanization": "suki" },
+        { "text": "な", "reading": "な", "romanization": "na" },
+        { "text": "わけ", "reading": "わけ", "romanization": "wake" },
+        { "text": "じゃ", "reading": "じゃ", "romanization": "ja" },
+        { "text": "ない", "reading": "ない", "romanization": "nai" },
+        { "text": "って", "reading": "って", "romanization": "tte" },
+        { "text": "言っ", "reading": "いっ", "romanization": "i" },
+        { "text": "た", "reading": "た", "romanization": "ta" },
+        { "text": "ん", "reading": "ん", "romanization": "n" },
+        { "text": "だ", "reading": "だ", "romanization": "da" },
+        { "text": "けど", "reading": "けど", "romanization": "kedo" },
+        { "text": "まあ", "reading": "まあ", "romanization": "maa" },
+        { "text": "好き", "reading": "すき", "romanization": "suki" },
+        { "text": "な", "reading": "な", "romanization": "na" },
+        { "text": "わけ", "reading": "わけ", "romanization": "wake" },
+        { "text": "です", "reading": "です", "romanization": "desu" },
+        { "text": "よね", "reading": "よね", "romanization": "yone" },
+        { "text": "好き", "reading": "すき", "romanization": "suki" },
+        { "text": "じゃ", "reading": "じゃ", "romanization": "ja" },
+        { "text": "ない", "reading": "ない", "romanization": "nai" },
+        { "text": "です", "reading": "です", "romanization": "desu" },
+        { "text": "か", "reading": "か", "romanization": "ka" },
+        { "text": "で", "reading": "で", "romanization": "de" },
+        { "text": "それ", "reading": "それ", "romanization": "sore" },
+        { "text": "について", "reading": "について", "romanization": "nitsuite" },
+        { "text": "思考", "reading": "しこう", "romanization": "shikou" },
+        { "text": "深め", "reading": "ふかめ", "romanization": "fukame" },
+        { "text": "たい", "reading": "たい", "romanization": "tai" },
+        { "text": "とか", "reading": "とか", "romanization": "toka" },
+        { "text": "思っ", "reading": "おもっ", "romanization": "omo" },
+        { "text": "てる", "reading": "てる", "romanization": "teru" },
+        { "text": "わけ", "reading": "わけ", "romanization": "wake" },
+        { "text": "です", "reading": "です", "romanization": "desu" },
+        { "text": "ね", "reading": "ね", "romanization": "ne" },
+        { "text": "普段", "reading": "ふだん", "romanization": "fudan" },
+        { "text": "から", "reading": "から", "romanization": "kara" },
+        { "text": "で", "reading": "で", "romanization": "de" },
+        { "text": "それ", "reading": "それ", "romanization": "sore" },
+        { "text": "が", "reading": "が", "romanization": "ga" },
+        { "text": "なかなか", "reading": "なかなか", "romanization": "nakanaka" },
+        { "text": "できない", "reading": "できない", "romanization": "dekinai" },
+        { "text": "から", "reading": "から", "romanization": "kara" },
+        { "text": "本", "reading": "ほん", "romanization": "hon" },
+        { "text": "を", "reading": "を", "romanization": "wo" },
+        { "text": "読ん", "reading": "よん", "romanization": "yon" },
+        { "text": "でる", "reading": "でる", "romanization": "deru" },
+        { "text": "わけ", "reading": "わけ", "romanization": "wake" },
+        { "text": "じゃ", "reading": "じゃ", "romanization": "ja" },
+        { "text": "ない", "reading": "ない", "romanization": "nai" },
+        { "text": "です", "reading": "です", "romanization": "desu" },
+        { "text": "か", "reading": "か", "romanization": "ka" },
+        { "text": "で", "reading": "で", "romanization": "de" },
+        { "text": "たまに", "reading": "たまに", "romanization": "tamani" },
+        { "text": "で", "reading": "で", "romanization": "de" },
+        { "text": "ほとんど", "reading": "ほとんど", "romanization": "hotondo" },
+        { "text": "の", "reading": "の", "romanization": "no" },
+        { "text": "人", "reading": "ひと", "romanization": "hito" },
+        { "text": "と", "reading": "と", "romanization": "to" },
+        { "text": "そういう", "reading": "そういう", "romanization": "souiu" },
+        { "text": "話", "reading": "はなし", "romanization": "hanashi" },
+        { "text": "でき", "reading": "でき", "romanization": "deki" },
+        { "text": "ない", "reading": "ない", "romanization": "nai" },
+        { "text": "ん", "reading": "ん", "romanization": "n" },
+        { "text": "です", "reading": "です", "romanization": "desu" },
+        { "text": "よね", "reading": "よね", "romanization": "yone" },
+        { "text": "まず", "reading": "まず", "romanization": "mazu" },
+        { "text": "雑談", "reading": "ざつだん", "romanization": "zatsudan" },
+        { "text": "とか", "reading": "とか", "romanization": "toka" },
+        { "text": "で", "reading": "で", "romanization": "de" },
+        { "text": "じゃあ", "reading": "じゃあ", "romanization": "jaa" },
+        { "text": "哲学", "reading": "てつがく", "romanization": "tetsugaku" },
+        { "text": "の", "reading": "の", "romanization": "no" },
+        { "text": "話", "reading": "はなし", "romanization": "hanashi" },
+        { "text": "し", "reading": "し", "romanization": "shi" },
+        { "text": "ましょ", "reading": "ましょ", "romanization": "masho" },
+        { "text": "う", "reading": "う", "romanization": "u" },
+        { "text": "とか", "reading": "とか", "romanization": "toka" }
+      ],
+      "translation": "You see, as for philosophy or history, last time I said I didn't like them, or that it's not like I like them, but well, I actually do. I like them, right? And I've always wanted to deepen my thoughts on them. And since that's hard to do, that's why I read books. And occasionally... well, for the most part, I can't talk about things like that with most people. Like, in small talk, saying 'Alright, let's talk about philosophy.'",
+      "speaker": {
+        "speaker_id": "s3",
+        "label": "ヤン"
+      }
+    },
+    {
+      "id": 9,
+      "start_seconds": 57.0,
+      "end_seconds": 60.0,
+      "raw_text": "それはやっぱもうレベル差ですか？",
+      "words": [
+        { "text": "それ", "reading": "それ", "romanization": "sore" },
+        { "text": "は", "reading": "は", "romanization": "wa" },
+        { "text": "やっぱ", "reading": "やっぱ", "romanization": "yappa" },
+        { "text": "もう", "reading": "もう", "romanization": "mou" },
+        { "text": "レベル", "reading": "れべる", "romanization": "reberu" },
+        { "text": "差", "reading": "さ", "romanization": "sa" },
+        { "text": "です", "reading": "です", "romanization": "desu" },
+        { "text": "か", "reading": "か", "romanization": "ka" }
+      ],
+      "translation": "Is that just because of a difference in level?",
+      "speaker": {
+        "speaker_id": "s2",
+        "label": "樋口 聖典"
+      }
+    }
+  ]
+}
