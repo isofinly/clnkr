@@ -3,6 +3,12 @@ use axum::response::{IntoResponse, Response};
 use gemini_client_api::gemini::utils::{GeminiSchema, gemini_schema};
 use serde::{Deserialize, Serialize};
 
+#[derive(Deserialize)]
+pub struct TranslateQuery {
+    #[serde(default)]
+    pub force: bool,
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TranslationInputRequest {
     pub translation_input: String,

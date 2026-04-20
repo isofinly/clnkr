@@ -17,7 +17,7 @@ use crate::{
     types::{
         transcript::{ComplexTranscriptOutput, TranscribeQuery},
         translate::{
-            TranslationErrorResponse, TranslationInput, TranslationInputRequest,
+            TranslateQuery, TranslationErrorResponse, TranslationInput, TranslationInputRequest,
             TranslationOutputResponse,
         },
     },
@@ -200,6 +200,7 @@ pub(super) async fn transcribe_stream(
 pub(super) async fn translate(
     State(state): State<Arc<AppState>>,
     Extension(user_id): Extension<String>,
+    Query(params): Query<TranslateQuery>,
     Json(req): Json<TranslationInputRequest>,
 ) -> Result<TranslationOutputResponse, (StatusCode, TranslationErrorResponse)> {
     let input = TranslationInput {
@@ -212,6 +213,7 @@ pub(super) async fn translate(
     let input_hash =
         utils::hex_sha256(serde_json::to_string(&input).unwrap_or_default().as_bytes());
 
+    if !params.force {
     if let Ok(Some(cached)) = core::get_cached_translation(&state.pool, &user_id, &input_hash).await
     {
         return Ok(TranslationOutputResponse {
@@ -219,6 +221,7 @@ pub(super) async fn translate(
             input_hash: input_hash.clone(),
             translation: cached,
         });
+    }
     }
 
     let output = state.gemini.translate(input.clone()).await.map_err(|e| {
