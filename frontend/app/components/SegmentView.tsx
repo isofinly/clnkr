@@ -46,6 +46,16 @@ export default function SegmentView({
 
   const segments = activeFile.transcript.segments;
 
+  // While streaming and no segments have arrived yet, show the animation
+  if (isTranscribing && segments.length === 0) {
+    return (
+      <div className="segment-empty">
+        <LogoAnimation mode={logoMode} />
+        <div className="segment-empty-label">TRANSCRIBING…</div>
+      </div>
+    );
+  }
+
   let activeSegmentIdx = -1;
   for (let i = 0; i < segments.length; i++) {
     if (currentTime >= segments[i].start_seconds) activeSegmentIdx = i;
