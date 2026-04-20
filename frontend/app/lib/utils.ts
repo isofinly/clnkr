@@ -1,4 +1,25 @@
 import { SPEAKER_COLORS } from "../constants";
+import { RawSegment, Segment, Transcript } from "../types";
+
+// Accepts both the canonical shape ({ speaker: { speaker_id, label? } })
+// and the flat shape ({ speaker_id: string }) used by mock3 / older backend output.
+export function normaliseSegment(raw: RawSegment): Segment {
+  const speaker =
+    raw.speaker ??
+    { speaker_id: raw.speaker_id ?? "s0" };
+  return {
+    ...raw,
+    speaker,
+    words: raw.words ?? [],
+  };
+}
+
+export function normaliseTranscript(t: Transcript): Transcript {
+  return {
+    ...t,
+    segments: (t.segments as unknown as RawSegment[]).map(normaliseSegment),
+  };
+}
 
 export function getSpeakerColor(speakerId: string): string {
   const num = parseInt(speakerId.replace(/\D/g, ""), 10);

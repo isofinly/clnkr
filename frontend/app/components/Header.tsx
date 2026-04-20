@@ -1,35 +1,37 @@
 "use client";
 import React, { useRef } from "react";
 import { ASCII_SPINNER, MODELS } from "../constants";
-import { ModelType } from "../hooks/useTranscription";
+import { ModelType, WordsMode } from "../hooks/useTranscription";
 import { TranscriptFile } from "../types";
 
 type Props = {
   isPlaying: boolean;
   playbackSpeed: number;
   isTranscribing: boolean;
-  modelType: ModelType;
+  wordsMode: WordsMode;
   activeFile: TranscriptFile | undefined;
   spinnerIdx: number;
   onTogglePlay: () => void;
   onCycleSpeed: () => void;
-  onModelChange: (m: ModelType) => void;
+  onWordsModeToggle: () => void;
   onLoadMock: (path: string) => void;
   onAudioFile: (file: File) => void;
+  onHelpOpen: () => void;
 };
 
 export default function Header({
   isPlaying,
   playbackSpeed,
   isTranscribing,
-  modelType,
+  wordsMode,
   activeFile,
   spinnerIdx,
   onTogglePlay,
   onCycleSpeed,
-  onModelChange,
+  onWordsModeToggle,
   onLoadMock,
   onAudioFile,
+  onHelpOpen,
 }: Props) {
   const audioInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -44,6 +46,7 @@ export default function Header({
       <div className="header-brand">
         <span className="brand-title">CLNKR</span>
         <span className="brand-version">v0.1</span>
+        <button className="ctrl-btn help-btn" onClick={onHelpOpen} title="Help (H)">?</button>
         {isPlaying && (
           <span className="live-indicator">
             <span>{ASCII_SPINNER[spinnerIdx]}</span>
@@ -53,14 +56,15 @@ export default function Header({
       </div>
 
       <nav className="header-nav">
-        <button className="ctrl-btn" onClick={() => onLoadMock("/mock1.json")}>
-          MOCK 1
-        </button>
-        <button className="ctrl-btn" onClick={() => onLoadMock("/mock2.json")}>
-          MOCK 2
-        </button>
+        {/*<span className="nav-sep">|</span>*/}
 
-        <span className="nav-sep">|</span>
+        <button
+          className={`ctrl-btn${wordsMode === "words" ? " active" : ""}`}
+          onClick={onWordsModeToggle}
+          title="Toggle word-level reading mode (W)"
+        >
+          {wordsMode === "words" ? "[ WORDS ]" : "[ SIMPLE ]"}
+        </button>
 
         <button
           className={`ctrl-btn${isTranscribing ? " active" : ""}`}
@@ -76,19 +80,6 @@ export default function Header({
           style={{ display: "none" }}
           onChange={handleAudioChange}
         />
-
-        <select
-          className="ctrl-btn"
-          value={modelType}
-          onChange={(e) => onModelChange(e.target.value as ModelType)}
-          style={{ minWidth: "148px" }}
-        >
-          {MODELS.map((m) => (
-            <option key={m.value} value={m.value}>
-              {m.label}
-            </option>
-          ))}
-        </select>
 
         <span className="nav-sep">|</span>
 

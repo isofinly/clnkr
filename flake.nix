@@ -21,29 +21,30 @@
         overlays = [ (import rust-overlay) ];
         pkgs = import nixpkgs {
           inherit system overlays;
-        }; 
+        };
       in
       {
         devShells.default = pkgs.mkShell {
-          buildInputs =
-            with pkgs;
-            [
-              (rust-bin.stable.latest.default.override {
-                extensions = [
-                  "rust-src"
-                  "rust-analyzer"
-                ];
-              })
-              pkg-config
-              cargo-deny
-              postgresql
-              bun
-              openssl
-            ];
-
+          buildInputs = with pkgs; [
+            (rust-bin.stable.latest.default.override {
+              extensions = [
+                "rust-src"
+                "rust-analyzer"
+              ];
+            })
+            pkg-config
+            cargo-deny
+            sqlx-cli
+            postgresql
+            bun
+            openssl
+            llvm
+            mecab
+          ];
 
           env = {
             OUT_DIR = "~/.cargo-target/proto";
+            DATABASE_URL = "postgresql://postgres:postgres@localhost:5432";
           };
 
           shellHook = ''

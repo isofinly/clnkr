@@ -1,12 +1,19 @@
 "use client";
 import { useState, useRef } from "react";
-import { Transcript, TranscriptFile, StreamStatus } from "../types";
+import { Transcript, TranscriptFile, StreamStatus, RawSegment } from "../types";
 import { API_BASE_URL } from "../constants";
-import { parseSseBlock } from "../lib/utils";
+import { parseSseBlock, normaliseTranscript, normaliseSegment } from "../lib/utils";
+import { authHeaders, clearToken } from "../lib/auth";
 
 export type ModelType = "gemini-flash" | "gemini-flash-lite";
+export type WordsMode = "simple" | "words";
 
-export function useTranscription() {
+export type TranscribeOptions = {
+  force?: boolean;
+  wordsMode?: WordsMode;
+};
+
+export function useTranscription(onUnauthorized: () => void) {
   const [files, setFiles] = useState<TranscriptFile[]>([]);
   const [activeFileIndex, setActiveFileIndex] = useState(-1);
   const [isTranscribing, setIsTranscribing] = useState(false);
@@ -16,17 +23,21 @@ export function useTranscription() {
 
   const loadMock = async (path: string) => {
     const res = await fetch(path);
-    const transcript: Transcript = await res.json();
+    const raw: Transcript = await res.json();
+    const transcript = normaliseTranscript(raw);
     const name = path.split("/").pop() ?? path;
     setFiles((prev) => [...prev, { name, transcript }]);
     setActiveFileIndex((prev) => (prev === -1 ? 0 : prev));
   };
 
-  const transcribeAudio = async (audioFile: File, modelType: ModelType) => {
+  const transcribeAudio = async (audioFile: File, options: TranscribeOptions = {}) => {
+    const { force = false, wordsMode = "words" } = options;
     const displayName = audioFile.name.replace(/\.[^.]+$/, "") || "transcript";
+    const transcriptWords = wordsMode === "words";
 
     const placeholder: TranscriptFile = {
       name: `${displayName} [streaming]`,
+      wordsMode: transcriptWords,
       transcript: {
         source_language: "",
         target_language: "en",
@@ -47,11 +58,23 @@ export function useTranscription() {
     const formData = new FormData();
     formData.append("audio", audioFile);
 
+    const params = new URLSearchParams({
+      transcript_words: String(transcriptWords),
+      ...(force ? { force: "true" } : {}),
+    });
+
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/api/v1/transcriptions/stream?model_type=${modelType}`,
-        { method: "POST", body: formData },
-      );
+      const response = await fetch(`${API_BASE_URL}/api/v1/transcriptions/stream?${params}`, {
+        method: "POST",
+        body: formData,
+        headers: authHeaders(),
+      });
+
+      if (response.status === 401) {
+        clearToken();
+        onUnauthorized();
+        throw new Error("Unauthorized");
+      }
 
       if (!response.ok || !response.body) {
         throw new Error(`Upload failed (${response.status})`);
@@ -79,33 +102,20 @@ export function useTranscription() {
             continue;
           }
 
-          if (parsed.event === "segment") {
-            streamSegmentCounterRef.current += 1;
-            const streamId = `stream-${streamSegmentCounterRef.current}`;
-            const seg = parsed.data as Record<string, unknown>;
+          // chunk events carry raw JSON text — we accumulate but don't render yet
+          if (parsed.event === "chunk") continue;
 
+          if (parsed.event === "segment") {
+            const seg = normaliseSegment(parsed.data as unknown as RawSegment);
             setFiles((prev) => {
               const updated = [...prev];
-              const existing = updated[newIndex];
-              if (!existing) return prev;
+              const file = updated[newIndex];
+              if (!file) return prev;
               updated[newIndex] = {
-                ...existing,
+                ...file,
                 transcript: {
-                  ...existing.transcript,
-                  segments: [
-                    ...existing.transcript.segments,
-                    {
-                      id: Number(seg.id ?? streamSegmentCounterRef.current),
-                      start_seconds: Number(seg.start_seconds ?? 0),
-                      end_seconds: Number(seg.end_seconds ?? 0),
-                      raw_text: String(seg.raw_text ?? ""),
-                      words: Array.isArray(seg.words) ? (seg.words as never) : [],
-                      translation: String(seg.translation ?? ""),
-                      speaker: (seg.speaker as { speaker_id: string }) ?? { speaker_id: "s0" },
-                      isStreaming: true,
-                      streamId,
-                    },
-                  ],
+                  ...file.transcript,
+                  segments: [...file.transcript.segments, seg],
                 },
               };
               return updated;
@@ -114,10 +124,10 @@ export function useTranscription() {
           }
 
           if (parsed.event === "complete") {
-            const transcript = parsed.data as unknown as Transcript;
+            const transcript = normaliseTranscript(parsed.data as unknown as Transcript);
             setFiles((prev) => {
               const updated = [...prev];
-              updated[newIndex] = { name: displayName, transcript };
+              updated[newIndex] = { name: displayName, transcript, wordsMode: transcriptWords };
               return updated;
             });
             setStreamStatus("done");
@@ -125,20 +135,44 @@ export function useTranscription() {
           }
 
           if (parsed.event === "error") {
-            setStreamError(String(parsed.data.message ?? "transcription failed"));
+            const msg = String(parsed.data.message ?? "transcription failed");
+            setStreamError(msg);
             setStreamStatus("error");
+            setFiles((prev) => {
+              const existing = prev[newIndex];
+              if (!existing || existing.transcript.segments.length > 0) return prev;
+              return prev.filter((_, i) => i !== newIndex);
+            });
+            setActiveFileIndex((cur) => {
+              if (cur === newIndex) return -1;
+              if (cur > newIndex) return cur - 1;
+              return cur;
+            });
           }
         }
       }
 
       const trailing = parseSseBlock(buffer.trim());
       if (trailing?.event === "error") {
-        setStreamError(String(trailing.data.message ?? "transcription failed"));
+        const msg = String(trailing.data.message ?? "transcription failed");
+        setStreamError(msg);
         setStreamStatus("error");
+        setFiles((prev) => {
+          const existing = prev[newIndex];
+          if (!existing || existing.transcript.segments.length > 0) return prev;
+          return prev.filter((_, i) => i !== newIndex);
+        });
+        setActiveFileIndex((cur) => {
+          if (cur === newIndex) return -1;
+          if (cur > newIndex) return cur - 1;
+          return cur;
+        });
       }
     } catch (err) {
-      setStreamError(err instanceof Error ? err.message : "transcription failed");
-      setStreamStatus("error");
+      if ((err as Error).message !== "Unauthorized") {
+        setStreamError(err instanceof Error ? err.message : "transcription failed");
+        setStreamStatus("error");
+      }
       setFiles((prev) => {
         const existing = prev[newIndex];
         if (!existing || existing.transcript.segments.length > 0) return prev;
