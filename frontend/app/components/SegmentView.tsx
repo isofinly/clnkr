@@ -4,6 +4,16 @@ import { Segment, TranscriptFile } from "../types";
 import { getSpeakerColor, formatTime } from "../lib/utils";
 import LogoAnimation from "./LogoAnimation";
 
+/** Build a context string from the surrounding segments for the translator. */
+function buildContext(segments: Segment[], idx: number): string | undefined {
+  const parts: string[] = [];
+  const prev = segments[idx - 1];
+  const next = segments[idx + 1];
+  if (prev) parts.push(`[previous] ${prev.raw_text}`);
+  if (next) parts.push(`[next] ${next.raw_text}`);
+  return parts.length > 0 ? parts.join("\n") : undefined;
+}
+
 type AnimationMode = "idle" | "streaming" | "done";
 
 type Props = {
@@ -14,7 +24,7 @@ type Props = {
   pendingSegmentId: number | null;
   logoMode: AnimationMode;
   onJumpToTime: (t: number) => void;
-  onTranslateSegment: (segId: number, text: string) => void;
+  onTranslateSegment: (segId: number, text: string, context?: string) => void;
 };
 
 export default function SegmentView({
@@ -109,27 +119,28 @@ export default function SegmentView({
                         className="raw-text-clickable"
                         onClick={(e) => {
                           e.stopPropagation();
-                          if (!isTranscribing) onTranslateSegment(seg.id, seg.raw_text);
+                          if (!isTranscribing && !isTranslationPending) onTranslateSegment(seg.id, seg.raw_text, buildContext(segments, idx));
                         }}
-                        title="Click to translate"
+                        title={isTranslationPending ? "Translating…" : "Click to translate"}
+                        style={{ cursor: isTranslationPending ? "wait" : undefined }}
                       >
                         {isTranslationPending ? (
-                          <span className="translation-pending">…</span>
+                          <span className="translation-pending">translating</span>
                         ) : seg.raw_text}
                       </span>
                     )
                   }
                   {seg.words.length > 0 && (
                     <button
-                      className="translate-chip"
-                      disabled={isTranscribing}
+                      className={`translate-chip${isTranslationPending ? " is-pending" : ""}`}
+                      disabled={isTranscribing || isTranslationPending}
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (!isTranscribing) onTranslateSegment(seg.id, seg.raw_text);
+                        if (!isTranscribing && !isTranslationPending) onTranslateSegment(seg.id, seg.raw_text, buildContext(segments, idx));
                       }}
-                      title="Translate"
+                      title={isTranslationPending ? "Translating…" : "Translate"}
                     >
-                      {isTranslationPending ? "…" : "T"}
+                      {isTranslationPending ? "·" : "T"}
                     </button>
                   )}
                 </div>

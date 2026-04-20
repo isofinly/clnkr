@@ -1,5 +1,5 @@
 "use client";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { TranslationEntry, AnalysisInputRequest } from "../types";
 import { API_BASE_URL } from "../constants";
 import { authHeaders, clearToken } from "../lib/auth";
@@ -9,6 +9,9 @@ export function useTranslation(onUnauthorized: () => void) {
   const [activeEntry, setActiveEntry] = useState<TranslationEntry | null>(null);
   const [pendingSegmentId, setPendingSegmentId] = useState<number | null>(null);
   const [isTranslating, setIsTranslating] = useState(false);
+  // Ref mirrors isTranslating so the stable useCallback closure can read the
+  // latest value without adding isTranslating to its dependency array.
+  const isTranslatingRef = useRef(false);
 
   const handleUnauth = (status: number) => {
     if (status === 401) { clearToken(); onUnauthorized(); return true; }
@@ -16,6 +19,10 @@ export function useTranslation(onUnauthorized: () => void) {
   };
 
   const translate = useCallback(async (req: AnalysisInputRequest, force = false) => {
+    // Guard: drop duplicate requests while one is already in flight.
+    if (isTranslatingRef.current) return;
+
+    isTranslatingRef.current = true;
     setPendingSegmentId(req.segment_id);
     setIsTranslating(true);
     try {
@@ -62,6 +69,7 @@ export function useTranslation(onUnauthorized: () => void) {
       });
       setActiveEntry(entry);
     } finally {
+      isTranslatingRef.current = false;
       setIsTranslating(false);
       setPendingSegmentId(null);
     }

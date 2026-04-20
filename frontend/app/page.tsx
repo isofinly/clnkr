@@ -108,7 +108,17 @@ export default function App() {
         }
         if (activeIdx !== -1) {
           const seg = segs[activeIdx];
-          translate({ translation_input: seg.raw_text, segment_id: seg.id });
+          const prevSeg = segs[activeIdx - 1];
+          const nextSeg = segs[activeIdx + 1];
+          const contextParts = [
+            prevSeg ? `[previous] ${prevSeg.raw_text}` : null,
+            nextSeg ? `[next] ${nextSeg.raw_text}` : null,
+          ].filter(Boolean);
+          translate({
+            translation_input: seg.raw_text,
+            segment_id: seg.id,
+            context: contextParts.length > 0 ? contextParts.join("\n") : undefined,
+          });
         }
       }
     };
@@ -182,8 +192,8 @@ export default function App() {
             pendingSegmentId={pendingSegmentId}
             logoMode={logoMode}
             onJumpToTime={jumpToTime}
-            onTranslateSegment={(segId, text) =>
-              translate({ translation_input: text, segment_id: segId })
+            onTranslateSegment={(segId, text, context) =>
+              translate({ translation_input: text, segment_id: segId, context })
             }
           />
           {activeEntry && (
