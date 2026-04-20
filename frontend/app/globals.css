@@ -136,7 +136,7 @@ body {
     font-size: var(--text-base);
     display: flex;
     flex-direction: column;
-    user-select: none;
+    user-select: none; /* re-enabled selectively on text content areas below */
     position: relative;
     overflow: hidden;
 }
@@ -421,6 +421,12 @@ body {
     flex: 1;
     overflow-y: auto;
     padding: 0 var(--pad-segment-h);
+    user-select: text;
+}
+
+.segment-scroll ::selection {
+    background: var(--color-border-accent);
+    color: var(--color-text-hi);
 }
 
 .segment-scroll-inner {
