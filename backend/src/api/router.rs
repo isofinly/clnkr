@@ -2,6 +2,7 @@ use crate::api::{app::AppState, handlers, middleware as mw};
 
 use axum::{
     Router,
+    extract::DefaultBodyLimit,
     http::Method,
     middleware,
     routing::{delete, get, post, put},
@@ -63,6 +64,7 @@ pub fn create_router(state: Arc<AppState>) -> Router {
 fn api_routes(state: Arc<AppState>) -> Router<Arc<AppState>> {
     let transcription_routes = Router::new()
         .route("/transcriptions/stream", post(handlers::transcribe_stream))
+        .layer(DefaultBodyLimit::max(60 * 1024 * 1024))
         .layer(middleware::from_fn_with_state(
             state.clone(),
             mw::rate_limit_transcription,

@@ -1,5 +1,5 @@
 "use client";
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import { ASCII_SPINNER, MODELS } from "../constants";
 import { ModelType, WordsMode } from "../hooks/useTranscription";
 import { TranscriptFile } from "../types";
@@ -34,14 +34,20 @@ export default function Header({
   onHelpOpen,
 }: Props) {
   const audioInputRef = useRef<HTMLInputElement | null>(null);
+  const [largFileWarning, setLargeFileWarning] = useState(false);
+
+  const WARN_BYTES = 50 * 1024 * 1024; // 50 MiB — advise splitting
 
   const handleAudioChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
-    if (f) onAudioFile(f);
+    if (!f) return;
+    setLargeFileWarning(f.size > WARN_BYTES);
+    onAudioFile(f);
     if (audioInputRef.current) audioInputRef.current.value = "";
   };
 
   return (
+    <>
     <header className="app-header">
       <div className="header-brand">
         <span className="brand-title">CLNKR</span>
@@ -96,5 +102,12 @@ export default function Header({
         </button>
       </nav>
     </header>
+    {largFileWarning && (
+      <div className="file-size-warning" role="alert">
+        <span>⚠ file is large (&gt;50 MiB) — consider splitting into smaller parts for better results</span>
+        <button className="file-size-warning-dismiss" onClick={() => setLargeFileWarning(false)}>✕</button>
+      </div>
+    )}
+  </>
   );
 }

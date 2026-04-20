@@ -181,6 +181,37 @@ body {
     flex-shrink: 0;
 }
 
+.file-size-warning {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--gap-md);
+    padding: 5px var(--pad-header);
+    background: color-mix(in srgb, #b45309 18%, var(--color-bg));
+    border-bottom: 1px solid #b45309;
+    color: #fbbf24;
+    font-family: var(--font-mono);
+    font-size: var(--text-xs, 0.65rem);
+    letter-spacing: 0.04em;
+    flex-shrink: 0;
+}
+
+.file-size-warning-dismiss {
+    background: none;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+    opacity: 0.6;
+    font-size: 0.8rem;
+    padding: 0 2px;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.file-size-warning-dismiss:hover {
+    opacity: 1;
+}
+
 .header-brand {
     display: flex;
     align-items: center;
