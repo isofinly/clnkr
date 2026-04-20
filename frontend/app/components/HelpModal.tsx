@@ -18,10 +18,9 @@ const SECTIONS = [
   {
     title: "HEADER BUTTONS",
     rows: [
-      ["[ WORDS ] / [ SIMPLE ]", "Switch between word-chip and plain-text view"],
+      // TODO:
+      // ["[ WORDS ] / [ SIMPLE ]", "Switch between word-chip and plain-text view"],
       ["UPLOAD AUDIO", "Pick an audio file and start transcription (SSE stream)"],
-      ["0.50x … 2.00x", "Cycle playback speed"],
-      ["[ PLAY ] / [ PAUSE ]", "Start or stop the playback clock"],
       ["?", "Open this help panel"],
     ],
   },

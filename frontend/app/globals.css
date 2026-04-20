@@ -230,15 +230,6 @@ body {
     font-size: var(--text-version);
 }
 
-.live-indicator {
-    display: flex;
-    align-items: center;
-    gap: var(--gap-xs);
-    font-size: var(--text-ui);
-    letter-spacing: 0.05em;
-    color: var(--color-text-dim);
-}
-
 .header-nav {
     display: flex;
     align-items: center;
@@ -480,10 +471,6 @@ body {
     color: var(--color-active);
     transform: translateX(6px);
 }
-.segment-line.is-past {
-    color: var(--color-past);
-}
-
 .segment-line.streaming {
     animation: stream-entry 520ms cubic-bezier(0.19, 1, 0.22, 1);
 }
@@ -501,10 +488,6 @@ body {
 .segment-line.is-active .segment-timestamp {
     color: var(--color-text-dim);
 }
-.segment-line.is-past .segment-timestamp {
-    color: var(--color-border-mid);
-}
-
 .segment-body {
     flex: 1;
     padding-left: 18px;
@@ -512,10 +495,6 @@ body {
     flex-direction: column;
     gap: var(--gap-xs);
     border-left: 2px solid var(--color-border-hi);
-}
-
-.segment-line.is-past .segment-body {
-    border-left-color: var(--color-border-mid);
 }
 
 .segment-speaker {
@@ -591,17 +570,6 @@ body {
     font-size: var(--text-ui);
 }
 
-.progress-track {
-    height: 3px;
-    background: var(--color-border);
-}
-
-.progress-fill {
-    height: 100%;
-    background: var(--color-progress);
-    transition: width 0.1s linear;
-}
-
 .app-footer {
     display: flex;
     align-items: center;
@@ -619,9 +587,6 @@ body {
 
 .footer-status {
     color: var(--color-text-mute);
-}
-.footer-status.playing {
-    color: var(--color-text-dim);
 }
 
 .footer-filename {

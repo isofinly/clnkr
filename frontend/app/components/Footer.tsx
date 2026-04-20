@@ -4,14 +4,13 @@ import { formatTime } from "../lib/utils";
 
 type Props = {
   activeFile: TranscriptFile | undefined;
-  isPlaying: boolean;
-  currentTime: number;
+  activeSegmentIdx: number;
   streamError: string;
 };
 
-export default function Footer({ activeFile, isPlaying, currentTime, streamError }: Props) {
-  const totalTime = activeFile?.transcript.total_duration_seconds ?? 0;
-  const progress = totalTime > 0 ? Math.min(currentTime / totalTime, 1) : 0;
+export default function Footer({ activeFile, activeSegmentIdx, streamError }: Props) {
+  const segments = activeFile?.transcript.segments ?? [];
+  const activeSeg = segments[activeSegmentIdx] ?? null;
 
   return (
     <div className="app-footer-wrap">
@@ -19,24 +18,20 @@ export default function Footer({ activeFile, isPlaying, currentTime, streamError
         <div className="footer-error">STREAM ERROR: {streamError}</div>
       )}
 
-      <div className="progress-track">
-        <div className="progress-fill" style={{ width: `${progress * 100}%` }} />
-      </div>
-
       <footer className="app-footer">
         <div className="footer-left">
-          <span className={`footer-status${isPlaying ? " playing" : ""}`}>
-            {isPlaying ? "● REC" : "○ IDLE"}
-          </span>
+          <span className="footer-status">○ IDLE</span>
           {activeFile && (
             <span className="footer-filename">{activeFile.name}</span>
           )}
         </div>
-        <div className="footer-time">
-          {formatTime(currentTime)}
-          <span className="footer-time-sep">/</span>
-          {formatTime(totalTime)}
-        </div>
+        {activeSeg && (
+          <div className="footer-time">
+            {formatTime(activeSeg.start_seconds)}
+            <span className="footer-time-sep">–</span>
+            {formatTime(activeSeg.end_seconds)}
+          </div>
+        )}
       </footer>
     </div>
   );

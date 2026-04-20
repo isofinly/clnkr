@@ -1,9 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import { useTranscription, ModelType, WordsMode } from "./hooks/useTranscription";
-import { usePlayback } from "./hooks/usePlayback";
 import { useTranslation } from "./hooks/useTranslation";
-import { ASCII_SPINNER } from "./constants";
 import { getToken, clearToken } from "./lib/auth";
 import AuthGate from "./components/AuthGate";
 import Header from "./components/Header";
@@ -56,34 +54,23 @@ export default function App() {
   } = useTranslation(handleUnauthorized);
 
   const activeFile = files[activeFileIndex];
-  const totalDuration = activeFile?.transcript.total_duration_seconds ?? 0;
-
-  const { isPlaying, currentTime, playbackSpeed, togglePlay, cycleSpeed, jumpToTime, reset } =
-    usePlayback(totalDuration);
 
   const [showHelp, setShowHelp] = useState(false);
   const [modelType, setModelType] = useState<ModelType>("gemini-flash");
   const [wordsMode, setWordsMode] = useState<WordsMode>("words");
-  const [spinnerIdx, setSpinnerIdx] = useState(0);
+  // Index of the segment the user last clicked; -1 means none selected.
+  const [activeSegmentIdx, setActiveSegmentIdx] = useState(-1);
 
-  // Logo animation mode derived from stream state
+  // Reset selection when switching files.
+  useEffect(() => {
+    setActiveSegmentIdx(-1);
+  }, [activeFileIndex]);
+
   const logoMode: LogoMode = isTranscribing
     ? "streaming"
     : streamStatus === "done"
       ? "done"
       : "idle";
-
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => {
-    reset();
-  }, [activeFileIndex]);
-
-  useEffect(() => {
-    let interval: ReturnType<typeof setInterval> | undefined;
-    if (isPlaying)
-      interval = setInterval(() => setSpinnerIdx((p) => (p + 1) % ASCII_SPINNER.length), 150);
-    return () => clearInterval(interval);
-  }, [isPlaying]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -92,39 +79,29 @@ export default function App() {
       if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
 
       if (e.key === "h" || e.key === "H") { setShowHelp((p) => !p); return; }
-      if (e.code === "Space") {
-        e.preventDefault();
-        togglePlay();
-      }
       if (e.key === "w" || e.key === "W") setWordsMode((p) => (p === "words" ? "simple" : "words"));
       if (e.key === "Escape") { closePanel(); setShowHelp(false); }
       if (e.key === "t" || e.key === "T") {
         const segs = activeFile?.transcript.segments;
-        if (!segs) return;
-        let activeIdx = -1;
-        for (let i = 0; i < segs.length; i++) {
-          if (currentTime >= segs[i].start_seconds) activeIdx = i;
-          else break;
-        }
-        if (activeIdx !== -1) {
-          const seg = segs[activeIdx];
-          const prevSeg = segs[activeIdx - 1];
-          const nextSeg = segs[activeIdx + 1];
-          const contextParts = [
-            prevSeg ? `[previous] ${prevSeg.raw_text}` : null,
-            nextSeg ? `[next] ${nextSeg.raw_text}` : null,
-          ].filter(Boolean);
-          translate({
-            translation_input: seg.raw_text,
-            segment_id: seg.id,
-            context: contextParts.length > 0 ? contextParts.join("\n") : undefined,
-          });
-        }
+        if (!segs || activeSegmentIdx === -1) return;
+        const seg = segs[activeSegmentIdx];
+        if (!seg) return;
+        const prevSeg = segs[activeSegmentIdx - 1];
+        const nextSeg = segs[activeSegmentIdx + 1];
+        const contextParts = [
+          prevSeg ? `[previous] ${prevSeg.raw_text}` : null,
+          nextSeg ? `[next] ${nextSeg.raw_text}` : null,
+        ].filter(Boolean);
+        translate({
+          translation_input: seg.raw_text,
+          segment_id: seg.id,
+          context: contextParts.length > 0 ? contextParts.join("\n") : undefined,
+        });
       }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [togglePlay, closePanel, translate, activeFile, currentTime]);
+  }, [closePanel, translate, activeFile, activeSegmentIdx]);
 
   if (!authChecked) return null;
   if (!authed) return <AuthGate onAuthenticated={() => setAuthed(true)} />;
@@ -151,14 +128,9 @@ export default function App() {
         <div className="rule" />
 
         <Header
-          isPlaying={isPlaying}
-          playbackSpeed={playbackSpeed}
           isTranscribing={isTranscribing}
           wordsMode={wordsMode}
           activeFile={activeFile}
-          spinnerIdx={spinnerIdx}
-          onTogglePlay={togglePlay}
-          onCycleSpeed={cycleSpeed}
           onWordsModeToggle={() => setWordsMode((p) => (p === "words" ? "simple" : "words"))}
           onHelpOpen={() => setShowHelp(true)}
           onLoadMock={loadMock}
@@ -186,12 +158,11 @@ export default function App() {
           />
           <SegmentView
             activeFile={activeFile}
-            currentTime={currentTime}
-            isPlaying={isPlaying}
+            activeSegmentIdx={activeSegmentIdx}
             isTranscribing={isTranscribing}
             pendingSegmentId={pendingSegmentId}
             logoMode={logoMode}
-            onJumpToTime={jumpToTime}
+            onSelectSegment={setActiveSegmentIdx}
             onTranslateSegment={(segId, text, context) =>
               translate({ translation_input: text, segment_id: segId, context })
             }
@@ -208,8 +179,7 @@ export default function App() {
 
         <Footer
           activeFile={activeFile}
-          isPlaying={isPlaying}
-          currentTime={currentTime}
+          activeSegmentIdx={activeSegmentIdx}
           streamError={streamError}
         />
 

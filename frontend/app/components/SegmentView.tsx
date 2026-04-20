@@ -1,5 +1,4 @@
 "use client";
-import { useEffect, useRef } from "react";
 import { Segment, TranscriptFile } from "../types";
 import { getSpeakerColor, formatTime } from "../lib/utils";
 import LogoAnimation from "./LogoAnimation";
@@ -18,33 +17,23 @@ type AnimationMode = "idle" | "streaming" | "done";
 
 type Props = {
   activeFile: TranscriptFile | undefined;
-  currentTime: number;
-  isPlaying: boolean;
+  activeSegmentIdx: number;
   isTranscribing: boolean;
   pendingSegmentId: number | null;
   logoMode: AnimationMode;
-  onJumpToTime: (t: number) => void;
+  onSelectSegment: (idx: number) => void;
   onTranslateSegment: (segId: number, text: string, context?: string) => void;
 };
 
 export default function SegmentView({
   activeFile,
-  currentTime,
-  isPlaying,
+  activeSegmentIdx,
   isTranscribing,
   pendingSegmentId,
   logoMode,
-  onJumpToTime,
+  onSelectSegment,
   onTranslateSegment,
 }: Props) {
-  const activeLineRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    if (isPlaying && activeLineRef.current) {
-      activeLineRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
-    }
-  }, [currentTime, isPlaying]);
-
   if (!activeFile) {
     return (
       <div className="segment-empty">
@@ -56,7 +45,6 @@ export default function SegmentView({
 
   const segments = activeFile.transcript.segments;
 
-  // While streaming and no segments have arrived yet, show the animation
   if (isTranscribing && segments.length === 0) {
     return (
       <div className="segment-empty">
@@ -66,18 +54,11 @@ export default function SegmentView({
     );
   }
 
-  let activeSegmentIdx = -1;
-  for (let i = 0; i < segments.length; i++) {
-    if (currentTime >= segments[i].start_seconds) activeSegmentIdx = i;
-    else break;
-  }
-
   return (
     <div className="segment-scroll">
       <div className="segment-scroll-inner">
         {segments.map((seg: Segment, idx: number) => {
           const isActive = idx === activeSegmentIdx;
-          const isPast = idx < activeSegmentIdx;
           const speakerColor = getSpeakerColor(seg.speaker.speaker_id);
           const speakerLabel = seg.speaker.label ?? seg.speaker.speaker_id;
           const isTranslationPending = pendingSegmentId === seg.id;
@@ -85,15 +66,13 @@ export default function SegmentView({
           const lineClass = [
             "segment-line",
             isActive ? "is-active" : "",
-            isPast ? "is-past" : "",
             seg.isStreaming ? "streaming" : "",
           ].filter(Boolean).join(" ");
 
           return (
             <div
               key={seg.streamId ?? seg.id}
-              ref={isActive ? activeLineRef : null}
-              onClick={() => onJumpToTime(seg.start_seconds)}
+              onClick={() => onSelectSegment(idx)}
               className={lineClass}
             >
               <span className="segment-timestamp">{formatTime(seg.start_seconds)}</span>
