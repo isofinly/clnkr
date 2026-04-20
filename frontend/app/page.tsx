@@ -34,8 +34,10 @@ export default function App() {
     streamStatus,
     streamError,
     loadMock,
+    fetchLibrary: fetchTranscriptions,
     transcribeAudio,
     selectFile,
+    renameFile,
     removeFile,
     clearLibrary,
   } = useTranscription(handleUnauthorized);
@@ -47,11 +49,19 @@ export default function App() {
     isTranslating,
     translate,
     retranslate,
+    fetchLibrary: fetchTranslations,
     deleteEntry,
     clearAll: clearTranslations,
     openEntry,
     closePanel,
   } = useTranslation(handleUnauthorized);
+
+  // Restore library from server whenever the user becomes authenticated.
+  useEffect(() => {
+    if (!authed) return;
+    fetchTranscriptions();
+    fetchTranslations();
+  }, [authed, fetchTranscriptions, fetchTranslations]);
 
   const activeFile = files[activeFileIndex];
 
@@ -149,6 +159,7 @@ export default function App() {
             translationEntries={translationEntries}
             activeTranslationEntry={activeEntry}
             onSelect={selectFile}
+            onRename={renameFile}
             onRemove={removeFile}
             onClear={clearLibrary}
             onRetranscribe={handleRetranscribe}

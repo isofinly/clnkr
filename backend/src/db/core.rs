@@ -1,4 +1,5 @@
 use crate::types::{
+    common::{CachedTranscription, CachedTranslation},
     transcript::{ComplexTranscriptOutput, SimpleTranscriptOutput},
     translate::{TranslationInput, TranslationOutput},
 };
@@ -49,17 +50,20 @@ pub async fn upsert_transcription(
     audio_signature: &str,
     transcript_type: &str,
     response_json: &serde_json::Value,
+    file_name: Option<&str>,
 ) -> Result<()> {
     sqlx::query!(
         r#"
-        INSERT INTO transcriptions (audio_signature, transcript_type, response_json)
-        VALUES ($1, $2, $3)
+        INSERT INTO transcriptions (audio_signature, transcript_type, response_json, file_name)
+        VALUES ($1, $2, $3, $4)
         ON CONFLICT (audio_signature, transcript_type)
-        DO UPDATE SET response_json = EXCLUDED.response_json, updated_at = NOW()
+        DO UPDATE SET response_json = EXCLUDED.response_json, updated_at = NOW(),
+            file_name = COALESCE(EXCLUDED.file_name, transcriptions.file_name)
         "#,
         audio_signature,
         transcript_type,
-        response_json
+        response_json,
+        file_name
     )
     .execute(pool)
     .await?;
@@ -80,6 +84,24 @@ pub async fn delete_transcription(
     .await?;
     Ok(())
 }
+
+pub async fn rename_transcription(
+    pool: &PgPool,
+    audio_signature: &str,
+    transcript_type: &str,
+    file_name: &str,
+) -> Result<()> {
+    sqlx::query!(
+        "UPDATE transcriptions SET file_name = $3 WHERE audio_signature = $1 AND transcript_type = $2",
+        audio_signature,
+        transcript_type,
+        file_name
+    )
+    .execute(pool)
+    .await?;
+    Ok(())
+}
+
 
 pub async fn get_cached_translation(
     pool: &PgPool,
@@ -202,4 +224,68 @@ pub async fn log_request(
     .execute(pool)
     .await?;
     Ok(())
+}
+
+/// Returns 50 entries of cached translations starting from the given offset.
+pub async fn get_cached_translations(
+    pool: &PgPool,
+    user_id: &str,
+    offset: i64,
+) -> Result<Vec<CachedTranslation>> {
+    let rows = sqlx::query!(
+        "SELECT response_json, input_hash FROM translations WHERE user_id = $1 LIMIT 50 OFFSET $2",
+        user_id,
+        offset
+    )
+    .fetch_all(pool)
+    .await?;
+
+    let result: Vec<CachedTranslation> = rows
+        .into_iter()
+        .map(|r| CachedTranslation {
+            response_json: r.response_json,
+            input_hash: r.input_hash,
+        })
+        .collect();
+
+    Ok(result)
+}
+
+/// Returns 25 entries of cached transcriptions starting from the given offset.
+pub async fn get_cached_transcriptions(
+    pool: &PgPool,
+    offset: i64,
+) -> Result<Vec<CachedTranscription>> {
+    let rows = sqlx::query!(
+        "SELECT response_json, audio_signature, transcript_type, file_name FROM transcriptions LIMIT 25 OFFSET $1",
+        offset
+    )
+    .fetch_all(pool)
+    .await?;
+
+    let result: Vec<CachedTranscription> = rows
+        .into_iter()
+        .map(|r| CachedTranscription {
+            response_json: r.response_json,
+            audio_signature: r.audio_signature,
+            transcript_type: r.transcript_type,
+            file_name: r.file_name,
+        })
+        .collect();
+
+    Ok(result)
+}
+
+pub async fn get_transcriptions_count(pool: &PgPool) -> Result<i64> {
+    let count = sqlx::query!("SELECT COUNT(1) FROM transcriptions")
+        .fetch_one(pool)
+        .await?;
+    Ok(count.count.unwrap_or(0))
+}
+
+pub async fn get_translations_count(pool: &PgPool) -> Result<i64> {
+    let count = sqlx::query!("SELECT COUNT(1) FROM translations")
+        .fetch_one(pool)
+        .await?;
+    Ok(count.count.unwrap_or(0))
 }

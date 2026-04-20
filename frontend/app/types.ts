@@ -40,6 +40,7 @@ export type TranscriptFile = {
   name: string;
   transcript: Transcript;
   wordsMode?: boolean;
+  audioSignature?: string;
 };
 
 export type StreamStatus =

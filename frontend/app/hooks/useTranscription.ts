@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import { Transcript, TranscriptFile, StreamStatus, RawSegment } from "../types";
 import { API_BASE_URL } from "../constants";
 import { parseSseBlock, normaliseTranscript, normaliseSegment } from "../lib/utils";
@@ -190,6 +190,58 @@ export function useTranscription(onUnauthorized: () => void) {
 
   const selectFile = (index: number) => setActiveFileIndex(index);
 
+  const fetchLibrary = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/v1/transcriptions`, {
+        headers: authHeaders(),
+      });
+      if (res.status === 401) { clearToken(); onUnauthorized(); return; }
+      if (!res.ok) return;
+      const body = await res.json();
+      const loaded: TranscriptFile[] = (body.transcriptions ?? []).map(
+        (entry: { response_json: Transcript; audio_signature: string; file_name?: string }) => ({
+          name: entry.file_name ?? entry.audio_signature.slice(0, 8),
+          transcript: normaliseTranscript(entry.response_json),
+          wordsMode: true,
+          audioSignature: entry.audio_signature,
+        }),
+      );
+      if (loaded.length > 0) {
+        setFiles(loaded);
+        setActiveFileIndex(0);
+      }
+    } catch {
+      // non-fatal — user simply sees an empty library
+    }
+  }, [onUnauthorized]);
+
+  const renameFile = useCallback(async (index: number, newName: string) => {
+    const file = files[index];
+    if (!file?.audioSignature) {
+      setFiles((prev) => {
+        const updated = [...prev];
+        if (updated[index]) updated[index] = { ...updated[index], name: newName };
+        return updated;
+      });
+      return;
+    }
+    try {
+      await fetch(
+        `${API_BASE_URL}/api/v1/transcriptions/${file.audioSignature}/rename`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json", ...authHeaders() },
+          body: JSON.stringify({ file_name: newName }),
+        },
+      );
+    } catch { /* best-effort */ }
+    setFiles((prev) => {
+      const updated = [...prev];
+      if (updated[index]) updated[index] = { ...updated[index], name: newName };
+      return updated;
+    });
+  }, [files]);
+
   const removeFile = (index: number) => {
     setFiles((prev) => prev.filter((_, i) => i !== index));
     setActiveFileIndex((cur) => {
@@ -213,8 +265,10 @@ export function useTranscription(onUnauthorized: () => void) {
     streamStatus,
     streamError,
     loadMock,
+    fetchLibrary,
     transcribeAudio,
     selectFile,
+    renameFile,
     removeFile,
     clearLibrary,
   };

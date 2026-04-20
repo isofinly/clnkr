@@ -5,7 +5,7 @@ use axum::{
     extract::DefaultBodyLimit,
     http::Method,
     middleware,
-    routing::{delete, get, post, put},
+    routing::{delete, get, patch, post, put},
 };
 use std::sync::Arc;
 use tower_http::{
@@ -84,6 +84,9 @@ fn api_routes(state: Arc<AppState>) -> Router<Arc<AppState>> {
 
     Router::new()
         .route("/health", get(handlers::health_check))
+        .route("/transcriptions", get(handlers::all_transcriptions))
+        .route("/transcriptions/{audio_signature}/rename", patch(handlers::rename_transcription))
+        .route("/user/translations", get(handlers::user_translations))
         .merge(transcription_routes)
         .merge(translation_routes)
         .merge(note_routes)

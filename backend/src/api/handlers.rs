@@ -15,6 +15,7 @@ use crate::{
     db::core,
     streaming::try_extract_next_segment,
     types::{
+        common::{CachedTranscriptionResponse, CachedTranslationResponse},
         transcript::{ComplexTranscriptOutput, TranscribeQuery},
         translate::{
             TranslateQuery, TranslationErrorResponse, TranslationInput, TranslationInputRequest,
@@ -45,7 +46,7 @@ pub(super) async fn transcribe_stream(
     Query(params): Query<TranscribeQuery>,
     mut multipart: Multipart,
 ) -> Response {
-    let (audio_bytes, _filename) = match extract_audio_field(&mut multipart).await {
+    let (audio_bytes, filename) = match extract_audio_field(&mut multipart).await {
         Ok(v) => v,
         Err(msg) => return utils::sse_error_response(msg),
     };
@@ -93,6 +94,7 @@ pub(super) async fn transcribe_stream(
     };
 
     let pool = state.pool.clone();
+    let stored_filename = filename.clone();
 
     let sse_stream = async_stream::stream! {
         yield Ok::<Event, std::convert::Infallible>(
@@ -183,6 +185,7 @@ pub(super) async fn transcribe_stream(
             &audio_signature,
             transcript_type,
             &response_val,
+            stored_filename.as_deref(),
         )
         .await;
 
@@ -214,14 +217,15 @@ pub(super) async fn translate(
         utils::hex_sha256(serde_json::to_string(&input).unwrap_or_default().as_bytes());
 
     if !params.force {
-    if let Ok(Some(cached)) = core::get_cached_translation(&state.pool, &user_id, &input_hash).await
-    {
-        return Ok(TranslationOutputResponse {
-            served_from_cache: true,
-            input_hash: input_hash.clone(),
-            translation: cached,
-        });
-    }
+        if let Ok(Some(cached)) =
+            core::get_cached_translation(&state.pool, &user_id, &input_hash).await
+        {
+            return Ok(TranslationOutputResponse {
+                served_from_cache: true,
+                input_hash: input_hash.clone(),
+                translation: cached,
+            });
+        }
     }
 
     let output = state.gemini.translate(input.clone()).await.map_err(|e| {
@@ -255,6 +259,11 @@ pub(super) async fn translate(
 #[derive(Deserialize)]
 pub(super) struct NoteBody {
     note_text: String,
+}
+
+#[derive(Deserialize)]
+pub(super) struct RenameBody {
+    file_name: String,
 }
 
 /// `GET /api/v1/notes/:input_hash`
@@ -316,6 +325,91 @@ pub(super) async fn delete_note(
         })?;
 
     Ok(StatusCode::NO_CONTENT)
+}
+
+#[derive(Deserialize)]
+pub(super) struct OffsetQuery {
+    #[serde(default)]
+    pub offset: i64,
+}
+
+/// `GET /api/v1/transcriptions?offset=`
+pub(super) async fn all_transcriptions(
+    State(state): State<Arc<AppState>>,
+    Extension(_user_id): Extension<String>,
+    Query(params): Query<OffsetQuery>,
+) -> Result<CachedTranscriptionResponse, (StatusCode, Json<Value>)> {
+    let data = core::get_cached_transcriptions(&state.pool, params.offset)
+        .await
+        .map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({ "message": format!("{e}") })),
+            )
+        })?;
+
+    let total_transcriptions_count =
+        core::get_transcriptions_count(&state.pool)
+            .await
+            .map_err(|e| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(json!({ "message": format!("{e}") })),
+                )
+            })?;
+    Ok(CachedTranscriptionResponse {
+        transcriptions: data,
+        total_translations: total_transcriptions_count,
+    })
+}
+
+/// `PATCH /api/v1/transcriptions/:audio_signature/rename`
+pub(super) async fn rename_transcription(
+    State(state): State<Arc<AppState>>,
+    Extension(_user_id): Extension<String>,
+    axum::extract::Path(audio_signature): axum::extract::Path<String>,
+    Json(body): Json<RenameBody>,
+) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
+    core::rename_transcription(&state.pool, &audio_signature, "complex", &body.file_name)
+        .await
+        .map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({ "message": format!("{e}") })),
+            )
+        })?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+/// `GET /api/v1/user/translations?offset=`
+pub(super) async fn user_translations(
+    State(state): State<Arc<AppState>>,
+    Extension(user_id): Extension<String>,
+    Query(params): Query<OffsetQuery>,
+) -> Result<CachedTranslationResponse, (StatusCode, Json<Value>)> {
+    let data = core::get_cached_translations(&state.pool, &user_id, params.offset)
+        .await
+        .map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({ "message": format!("{e}") })),
+            )
+        })?;
+
+    let total_transcriptions_count =
+        core::get_translations_count(&state.pool)
+            .await
+            .map_err(|e| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(json!({ "message": format!("{e}") })),
+                )
+            })?;
+
+    Ok(CachedTranslationResponse {
+        translations: data,
+        total_transcriptions: total_transcriptions_count,
+    })
 }
 
 type Content = Vec<u8>;

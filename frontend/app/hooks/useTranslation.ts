@@ -1,6 +1,6 @@
 "use client";
 import { useState, useCallback, useRef } from "react";
-import { TranslationEntry, AnalysisInputRequest } from "../types";
+import { TranslationEntry, AnalysisInputRequest, TranslationOutput } from "../types";
 import { API_BASE_URL } from "../constants";
 import { authHeaders, clearToken } from "../lib/auth";
 
@@ -102,6 +102,32 @@ export function useTranslation(onUnauthorized: () => void) {
   const openEntry = (entry: TranslationEntry) => setActiveEntry(entry);
   const closePanel = () => setActiveEntry(null);
 
+  const fetchLibrary = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/v1/user/translations`, {
+        headers: authHeaders(),
+      });
+      if (res.status === 401) { clearToken(); onUnauthorized(); return; }
+      if (!res.ok) return;
+      const body = await res.json();
+      const loaded: TranslationEntry[] = (body.translations ?? []).map(
+        (entry: { response_json: TranslationOutput; input_hash: string }) => ({
+          id: crypto.randomUUID(),
+          input_hash: entry.input_hash,
+          input_json: { translation_input: (entry.response_json as TranslationOutput).source_text, context: undefined },
+          response_json: entry.response_json,
+          cached: true,
+          orphaned: false,
+          origin_segment_id: null,
+          created_at: new Date().toISOString(),
+        }),
+      );
+      if (loaded.length > 0) setEntries(loaded);
+    } catch {
+      // non-fatal
+    }
+  }, [onUnauthorized]);
+
   return {
     entries,
     activeEntry,
@@ -109,6 +135,7 @@ export function useTranslation(onUnauthorized: () => void) {
     isTranslating,
     translate,
     retranslate,
+    fetchLibrary,
     deleteEntry,
     clearAll,
     openEntry,

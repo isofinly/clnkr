@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { TranscriptFile, StreamStatus, TranslationEntry, LibraryTab } from "../types";
 
 const DELETE_TIMEOUT_MS = 5000;
@@ -13,6 +13,7 @@ type Props = {
   translationEntries: TranslationEntry[];
   activeTranslationEntry: TranslationEntry | null;
   onSelect: (i: number) => void;
+  onRename: (i: number, name: string) => void;
   onRemove: (i: number) => void;
   onClear: () => void;
   onRetranscribe: (i: number) => void;
@@ -20,6 +21,36 @@ type Props = {
   onDeleteTranslation: (id: string) => void;
   onClearTranslations: () => void;
 };
+
+function RenameInput({
+  initial,
+  onCommit,
+  onCancel,
+}: {
+  initial: string;
+  onCommit: (v: string) => void;
+  onCancel: () => void;
+}) {
+  const [value, setValue] = useState(initial);
+  const ref = useRef<HTMLInputElement>(null);
+
+  useEffect(() => { ref.current?.select(); }, []);
+
+  return (
+    <input
+      ref={ref}
+      className="file-rename-input"
+      value={value}
+      onChange={(e) => setValue(e.target.value)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") { e.preventDefault(); onCommit(value.trim() || initial); }
+        if (e.key === "Escape") { e.preventDefault(); onCancel(); }
+      }}
+      onBlur={() => onCommit(value.trim() || initial)}
+      onClick={(e) => e.stopPropagation()}
+    />
+  );
+}
 
 export default function Sidebar({
   files,
@@ -30,6 +61,7 @@ export default function Sidebar({
   translationEntries,
   activeTranslationEntry,
   onSelect,
+  onRename,
   onRemove,
   onClear,
   onRetranscribe,
@@ -40,6 +72,7 @@ export default function Sidebar({
   const [tab, setTab] = useState<LibraryTab>("transcriptions");
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [clearPending, setClearPending] = useState(false);
+  const [renamingIdx, setRenamingIdx] = useState<number | null>(null);
   const deleteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const clearTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -47,7 +80,6 @@ export default function Sidebar({
 
   const armDelete = (id: string) => {
     if (pendingDeleteId === id) {
-      // second click — confirm
       if (deleteTimerRef.current) clearTimeout(deleteTimerRef.current);
       setPendingDeleteId(null);
       if (tab === "transcriptions") {
@@ -113,17 +145,30 @@ export default function Sidebar({
             files.map((file, idx) => {
               const itemId = String(idx);
               const isPending = pendingDeleteId === itemId;
+              const isRenaming = renamingIdx === idx;
               return (
                 <div
                   key={idx}
                   className={`file-item${activeFileIndex === idx ? " is-active" : ""}${isPending ? " delete-pending" : ""}`}
-                  onClick={() => onSelect(idx)}
+                  onClick={() => { if (!isRenaming) onSelect(idx); }}
                 >
                   <div className="file-item-row">
-                    <span className="file-item-name">
-                      {file.name}
-                      {file.wordsMode && <span className="item-badge">[W]</span>}
-                    </span>
+                    {isRenaming ? (
+                      <RenameInput
+                        initial={file.name}
+                        onCommit={(name) => { onRename(idx, name); setRenamingIdx(null); }}
+                        onCancel={() => setRenamingIdx(null)}
+                      />
+                    ) : (
+                      <span
+                        className="file-item-name"
+                        onDoubleClick={(e) => { e.stopPropagation(); setRenamingIdx(idx); }}
+                        title="Double-click to rename"
+                      >
+                        {file.name}
+                        {file.wordsMode && <span className="item-badge">[W]</span>}
+                      </span>
+                    )}
                     <div className="file-item-actions">
                       <button
                         className="library-item-action"
