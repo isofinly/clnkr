@@ -19,6 +19,7 @@ export function useTranscription(onUnauthorized: () => void) {
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [streamStatus, setStreamStatus] = useState<StreamStatus>("idle");
   const [streamError, setStreamError] = useState("");
+  const [isFallback, setIsFallback] = useState(false);
   const streamSegmentCounterRef = useRef(0);
 
   const loadMock = async (path: string) => {
@@ -48,6 +49,7 @@ export function useTranscription(onUnauthorized: () => void) {
     };
 
     setStreamError("");
+    setIsFallback(false);
     setStreamStatus("uploading");
     setIsTranscribing(true);
 
@@ -99,6 +101,11 @@ export function useTranscription(onUnauthorized: () => void) {
 
           if (parsed.event === "status") {
             setStreamStatus(String(parsed.data.message ?? "working").toLowerCase());
+            continue;
+          }
+
+          if (parsed.event === "fallback") {
+            setIsFallback(true);
             continue;
           }
 
@@ -264,6 +271,7 @@ export function useTranscription(onUnauthorized: () => void) {
     isTranscribing,
     streamStatus,
     streamError,
+    isFallback,
     loadMock,
     fetchLibrary,
     transcribeAudio,

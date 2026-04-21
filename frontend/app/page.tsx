@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useTranscription, ModelType, WordsMode } from "./hooks/useTranscription";
 import { useTranslation } from "./hooks/useTranslation";
 import { getToken, clearToken } from "./lib/auth";
@@ -9,6 +9,7 @@ import Sidebar from "./components/Sidebar";
 import SegmentView from "./components/SegmentView";
 import Footer from "./components/Footer";
 import HelpModal from "./components/HelpModal";
+import FallbackModal from "./components/FallbackModal";
 import TranslationPanel from "./components/TranslationPanel";
 
 type LogoMode = "idle" | "streaming" | "done";
@@ -33,6 +34,7 @@ export default function App() {
     isTranscribing,
     streamStatus,
     streamError,
+    isFallback,
     loadMock,
     fetchLibrary: fetchTranscriptions,
     transcribeAudio,
@@ -66,6 +68,14 @@ export default function App() {
   const activeFile = files[activeFileIndex];
 
   const [showHelp, setShowHelp] = useState(false);
+  const [showFallback, setShowFallback] = useState(false);
+
+  // Auto-show the fallback modal once when the backend switches providers.
+  const prevFallback = useRef(false);
+  useEffect(() => {
+    if (isFallback && !prevFallback.current) setShowFallback(true);
+    prevFallback.current = isFallback;
+  }, [isFallback]);
   const [modelType, setModelType] = useState<ModelType>("gemini-flash");
   const [wordsMode, setWordsMode] = useState<WordsMode>("words");
   // Index of the segment the user last clicked; -1 means none selected.
@@ -88,9 +98,15 @@ export default function App() {
       const tag = (e.target as HTMLElement).tagName;
       if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
 
-      if (e.key === "h" || e.key === "H") { setShowHelp((p) => !p); return; }
+      if (e.key === "h" || e.key === "H") {
+        setShowHelp((p) => !p);
+        return;
+      }
       if (e.key === "w" || e.key === "W") setWordsMode((p) => (p === "words" ? "simple" : "words"));
-      if (e.key === "Escape") { closePanel(); setShowHelp(false); }
+      if (e.key === "Escape") {
+        closePanel();
+        setShowHelp(false);
+      }
       if (e.key === "t" || e.key === "T") {
         const segs = activeFile?.transcript.segments;
         if (!segs || activeSegmentIdx === -1) return;
@@ -148,6 +164,7 @@ export default function App() {
         />
 
         {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
+        {showFallback && <FallbackModal onClose={() => setShowFallback(false)} />}
 
         <main style={{ flex: 1, display: "flex", minHeight: 0, position: "relative" }}>
           <Sidebar

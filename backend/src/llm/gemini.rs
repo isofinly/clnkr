@@ -3,6 +3,7 @@ use base64::{Engine, engine::general_purpose::STANDARD};
 use futures::StreamExt;
 use gemini_client_api::gemini::{
     ask::Gemini,
+    error::{GeminiResponseError, Status},
     types::{
         request::{FileData, InlineData, PartType, SystemInstruction},
         sessions::Session,
@@ -17,7 +18,7 @@ use tokio::sync::{mpsc, oneshot};
 
 use crate::{
     constants,
-    gemini::common::Model,
+    llm::{common::Model, openrouter},
     types::{
         transcript::ComplexTranscriptOutput,
         translate::{TranslationInput, TranslationOutput},
@@ -30,8 +31,7 @@ use crate::{
 // mid-stream "error decoding response body" failures on larger audio.
 const FILE_API_THRESHOLD_BYTES: usize = 10 * 1024 * 1024; // 10 MiB
 
-const FILE_API_UPLOAD_URL: &str =
-    "https://generativelanguage.googleapis.com/upload/v1beta/files";
+const FILE_API_UPLOAD_URL: &str = "https://generativelanguage.googleapis.com/upload/v1beta/files";
 
 enum GeminiCmd {
     TranscribeStream {
@@ -51,9 +51,9 @@ pub struct GeminiClient {
 }
 
 impl GeminiClient {
-    pub fn new(api_keys: (String, String)) -> Self {
+    pub fn new(api_keys: (String, String), openrouter_api_key: Option<String>) -> Self {
         let (tx, rx) = mpsc::channel(8);
-        tokio::spawn(gemini_actor(api_keys, rx));
+        tokio::spawn(gemini_actor(api_keys, openrouter_api_key, rx));
         Self { tx }
     }
 
@@ -63,7 +63,7 @@ impl GeminiClient {
     ///
     /// The caller is responsible for accumulating all `Ok` chunks into a
     /// single buffer and deserializing the result into `ComplexTranscriptOutput`.
-    pub async fn transcribe_audio_stream(
+    pub async fn transcribe_audio_as_stream(
         &self,
         bytes: Vec<u8>,
         mime_type: impl Into<String>,
@@ -92,7 +92,11 @@ impl GeminiClient {
     }
 }
 
-async fn gemini_actor(api_keys: (String, String), mut rx: mpsc::Receiver<GeminiCmd>) {
+async fn gemini_actor(
+    api_keys: (String, String),
+    openrouter_api_key: Option<String>,
+    mut rx: mpsc::Receiver<GeminiCmd>,
+) {
     // Build a shared reqwest client with a generous timeout for large uploads and
     // long-running generation streams. The default 60 s timeout in gemini-client-api
     // is too short for multi-minute audio files.
@@ -129,23 +133,28 @@ async fn gemini_actor(api_keys: (String, String), mut rx: mpsc::Receiver<GeminiC
             } => {
                 let transcriber = transcriber.clone();
                 let api_key = api_keys.0.clone();
+                let openrouter_key = openrouter_api_key.clone();
                 let http = http.clone();
                 tokio::spawn(async move {
-                    do_transcribe_stream(&transcriber, &http, &api_key, bytes, &mime_type, chunk_tx)
-                        .await;
+                    transcribe_as_stream(
+                        &transcriber,
+                        &http,
+                        &api_key,
+                        openrouter_key.as_deref(),
+                        bytes,
+                        &mime_type,
+                        chunk_tx,
+                    )
+                    .await;
                 });
             }
             GeminiCmd::Translate { input, reply } => {
-                let result = do_translate(&translator, input).await;
+                let result = translate(&translator, input).await;
                 let _ = reply.send(result);
             }
         }
     }
 }
-
-// =========================================================================
-// File API upload (resumable protocol)
-// =========================================================================
 
 #[derive(Deserialize, Debug)]
 struct FileApiResponse {
@@ -180,7 +189,6 @@ async fn upload_via_file_api(
         "initiating resumable File API upload"
     );
 
-    // Step 1: initiate upload, collect the resumable upload URL from headers.
     let init_resp = http
         .post(format!("{FILE_API_UPLOAD_URL}?key={api_key}"))
         .header("X-Goog-Upload-Protocol", "resumable")
@@ -199,14 +207,17 @@ async fn upload_via_file_api(
     let upload_url = init_resp
         .headers()
         .get("x-goog-upload-url")
-        .ok_or_else(|| anyhow::anyhow!("File API init response missing x-goog-upload-url header (status {status})"))?
+        .ok_or_else(|| {
+            anyhow::anyhow!(
+                "File API init response missing x-goog-upload-url header (status {status})"
+            )
+        })?
         .to_str()
         .map_err(|e| anyhow::anyhow!("x-goog-upload-url header is not valid UTF-8: {e}"))?
         .to_owned();
 
     tracing::debug!(upload_url = %upload_url, "received resumable upload URL");
 
-    // Step 2: upload the raw bytes and finalise.
     let finalize_resp = http
         .put(&upload_url)
         .header("Content-Length", num_bytes.to_string())
@@ -243,14 +254,11 @@ async fn upload_via_file_api(
     Ok(parsed.file)
 }
 
-// =========================================================================
-// Transcription streaming
-// =========================================================================
-
-async fn do_transcribe_stream(
+async fn transcribe_as_stream(
     ai: &Gemini,
     http: &HttpClient,
     api_key: &str,
+    openrouter_api_key: Option<&str>,
     bytes: Vec<u8>,
     mime_type: &str,
     chunk_tx: mpsc::Sender<Result<String>>,
@@ -283,7 +291,7 @@ async fn do_transcribe_stream(
         let file = match upload_via_file_api(http, api_key, &bytes, mime_type).await {
             Ok(f) => f,
             Err(e) => {
-                tracing::error!(error = %e, "File API upload failed");
+                tracing::error!(error = %e.to_string().replace('\n', " | "), "File API upload failed");
                 let _ = chunk_tx
                     .send(Err(anyhow::anyhow!("File API upload failed: {e}")))
                     .await;
@@ -302,11 +310,29 @@ async fn do_transcribe_stream(
 
     let mut stream = match ai.ask_as_stream(session).await {
         Ok(s) => s,
-        Err((_session, e)) => {
-            tracing::error!(error = %e, "Gemini stream init failed");
-            let _ = chunk_tx
-                .send(Err(anyhow::anyhow!("Gemini stream init failed: {e}")))
-                .await;
+        Err((_session, err)) => {
+            if is_503_unavailable(&err) {
+                tracing::warn!(
+                    error = %err.to_string().replace('\n', " | "),
+                    "Gemini returned 503 Unavailable — falling back to OpenRouter"
+                );
+                if let Some(or_key) = openrouter_api_key {
+                    openrouter::transcribe_as_stream(http, or_key, &bytes, mime_type, &chunk_tx)
+                        .await;
+                } else {
+                    tracing::error!("OpenRouter fallback key not configured; cannot fall back");
+                    let _ = chunk_tx
+                        .send(Err(anyhow::anyhow!(
+                            "Gemini 503 and no OpenRouter fallback key configured"
+                        )))
+                        .await;
+                }
+            } else {
+                tracing::error!(error = %err.to_string().replace('\n', " | "), "Gemini stream init failed");
+                let _ = chunk_tx
+                    .send(Err(anyhow::anyhow!("Gemini stream init failed: {err}")))
+                    .await;
+            }
             return;
         }
     };
@@ -329,14 +355,17 @@ async fn do_transcribe_stream(
                 chunk_count += 1;
                 if !text.is_empty() {
                     if chunk_tx.send(Ok(text)).await.is_err() {
-                        tracing::warn!(chunk = chunk_count, "chunk receiver dropped, aborting stream");
+                        tracing::warn!(
+                            chunk = chunk_count,
+                            "chunk receiver dropped, aborting stream"
+                        );
                         break;
                     }
                 }
             }
             Err(e) => {
                 tracing::error!(
-                    error = %e,
+                    error = %e.to_string().replace('\n', " | "),
                     chunks_received = chunk_count,
                     total_text_bytes,
                     "Gemini stream chunk error"
@@ -357,7 +386,7 @@ async fn do_transcribe_stream(
     // Dropping chunk_tx here closes the channel, signalling EOF to the receiver.
 }
 
-async fn do_translate(ai: &Gemini, input: TranslationInput) -> Result<TranslationOutput> {
+async fn translate(ai: &Gemini, input: TranslationInput) -> Result<TranslationOutput> {
     let mut session = Session::new(2);
     let serialized = serde_json::to_string(&input)
         .map_err(|_| anyhow::anyhow!("Failed to serialize TranslationInput"))?;
@@ -365,4 +394,11 @@ async fn do_translate(ai: &Gemini, input: TranslationInput) -> Result<Translatio
     let reply = ai.ask(&mut session).await?;
 
     Ok(reply.get_json()?)
+}
+
+fn is_503_unavailable(err: &GeminiResponseError) -> bool {
+    match err {
+        GeminiResponseError::StatusNotOk(ge) => ge.error.status == Status::Unavailable,
+        _ => false,
+    }
 }

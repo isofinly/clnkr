@@ -18,7 +18,7 @@ primary_region = 'ams'
   processes = ['app']
 
 [env]
-  RUST_LOG = "info"
+  RUST_LOG = "info,transcriber_api=debug"
 
 [[vm]]
   memory = '256mb'

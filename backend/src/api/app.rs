@@ -1,6 +1,6 @@
 use sqlx::postgres::PgPool;
 
-use crate::{api::middleware::RateLimiter, gemini::client::GeminiClient};
+use crate::{api::middleware::RateLimiter, llm::gemini::GeminiClient};
 
 pub struct AppState {
     pub(crate) pool: PgPool,

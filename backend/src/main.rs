@@ -11,6 +11,8 @@ async fn main() -> anyhow::Result<()> {
         env::var("GEMINI_TRANSCRIBE_API_KEY").expect("GEMINI_TRANSCRIBE_API_KEY must be set");
     let translation_api_key =
         env::var("GEMINI_TRANSLATE_API_KEY").expect("GEMINI_TRANSLATE_API_KEY must be set");
+    let openrouter_api_key: Option<String> = env::var("OPENROUTER_API_KEY").ok();
+
     let psql_connection_string = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
     let jwt_secret = env::var("JWT_SECRET").expect("JWT_SECRET must be set");
 
@@ -31,7 +33,10 @@ async fn main() -> anyhow::Result<()> {
         .context("failed to run migrations")
         .unwrap();
 
-    let gemini = gemini::client::GeminiClient::new((trancription_api_key, translation_api_key));
+    let gemini = llm::gemini::GeminiClient::new(
+        (trancription_api_key, translation_api_key),
+        openrouter_api_key,
+    );
 
     let state = AppState::new(pool, gemini, jwt_secret);
 

@@ -84,7 +84,7 @@ pub(super) async fn transcribe_stream(
 
     let mut chunk_rx = match state
         .gemini
-        .transcribe_audio_stream(audio_bytes, "audio/mpeg")
+        .transcribe_audio_as_stream(audio_bytes, "audio/mpeg")
         .await
     {
         Ok(rx) => rx,
@@ -113,6 +113,18 @@ pub(super) async fn transcribe_stream(
         while let Some(result) = chunk_rx.recv().await {
             match result {
                 Ok(text) => {
+                    // The sentinel is injected by the Gemini client actor when
+                    // it detects a 503 and activates the OpenRouter fallback.
+                    // We surface it as a dedicated SSE event so the frontend can
+                    // show an informational banner without treating it as a JSON
+                    // fragment or an error.
+                    if text == "__FALLBACK_OPENROUTER__" {
+                        yield Ok(Event::default()
+                            .event("fallback")
+                            .data("{\"provider\":\"openrouter\"}"));
+                        continue;
+                    }
+
                     buffer.push_str(&text);
 
                     // Extract every newly completable segment from the
