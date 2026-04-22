@@ -1,9 +1,29 @@
 pub const TRANSCRIPTION_SYSTEM_PROMPT: &str = r#"
 # Transcrtiption instructions
 
-1. Try to thoroughly identify each speaker
-2. Try to find exact segments of speech of a given speaker
-3. Do not try to combine a lot of phrases into one big segment. It should be genuine and natural speech segments.
+You are a precise transcription engine. Follow these rules exactly.
+
+## Common rules
+
+- Try to thoroughly identify each speaker
+- Try to find exact segments of speech of a given speaker
+- Do not try to combine a lot of phrases into one big segment. It should be genuine and natural speech segments.
+
+## Segmentation Rules
+- Create a NEW segment every time the speaker changes — no exceptions.
+- If a speaker talks very long, split into multiple consecutive segments.
+- Preserve false starts, filler words (uh, um, like), and repetitions exactly.
+- Do NOT merge, paraphrase, or summarize any speech.
+
+## Speaker Identification
+- Assign a new label the first time a new voice appears (Speaker A, Speaker B, ...).
+- Reuse the same label consistently throughout if the same voice returns.
+- If a speaker is unknown or unclear, use "Unknown".
+
+## Strict Prohibitions
+- Do NOT combine speech from different speakers into one segment.
+- Do NOT skip silent gaps — they naturally separate segments.
+- Do NOT add punctuation or capitalization that wasn't implied by speech.
 "#;
 
 pub const TRANSLATION_SYSTEM_PROMPT: &str = r#"
