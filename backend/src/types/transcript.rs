@@ -10,7 +10,7 @@ pub struct TranscribeQuery {
     pub force: bool,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[gemini_schema]
 #[allow(dead_code)]
 pub struct SimpleTranscriptOutput {
@@ -21,7 +21,7 @@ pub struct SimpleTranscriptOutput {
     pub segments: Vec<SimpleSegment>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[gemini_schema]
 #[allow(dead_code)]
 pub struct ComplexTranscriptOutput {
@@ -32,14 +32,14 @@ pub struct ComplexTranscriptOutput {
     pub segments: Vec<ComplexSegment>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[gemini_schema]
 pub struct Speaker {
     pub speaker_id: String,
     pub label: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[gemini_schema]
 pub struct SimpleSegment {
     pub id: i64,
@@ -50,22 +50,27 @@ pub struct SimpleSegment {
     pub speaker_id: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[gemini_schema]
 pub struct ComplexSegment {
     pub id: u64,
     pub start_seconds: f64,
     pub end_seconds: f64,
     pub raw_text: String,
+    /// Ordered list of every word in the segment with its kana reading and romanization.
+    /// This array must never be left empty — every token in raw_text must be accounted for.
     pub words: Vec<TranscriptWord>,
     pub translation: String,
     pub speaker: Speaker,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[gemini_schema]
 pub struct TranscriptWord {
+    /// Surface form of the word as spoken (e.g. "感覚").
     pub text: String,
+    /// Kana reading of the word (hiragana/katakana, e.g. "かんかく").
     pub reading: String,
+    /// Romanized pronunciation (Hepburn for Japanese, e.g. "kankaku").
     pub romanization: String,
 }

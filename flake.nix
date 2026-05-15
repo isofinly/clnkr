@@ -40,6 +40,7 @@
             openssl
             llvm
             mecab
+            ffmpeg
           ];
 
           env = {

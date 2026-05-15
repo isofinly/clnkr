@@ -1,38 +1,38 @@
 use gemini_client_api::gemini::utils::{GeminiSchema, gemini_schema};
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Deserialize)]
+use super::transcript::TranscriptWord;
+
+/// Input for the flash-lite word-fill guard.
+/// Sent when a chunk transcription returns segments with empty `words` arrays.
+#[derive(Debug, Serialize)]
 #[gemini_schema]
-pub struct ReadingInput {
-    pub source_language: String,
-    pub segments: Vec<Segment>,
+pub struct WordFillInput {
+    /// Segments that need word-level readings and romanizations.
+    pub segments: Vec<WordFillSegment>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize)]
 #[gemini_schema]
-pub struct Segment {
+pub struct WordFillSegment {
+    /// Segment identifier used to map the result back to the original segment.
     pub id: u64,
+    /// The raw Japanese text to be broken down into words.
     pub raw_text: String,
 }
 
-pub type ReadingOutputResponse = ReadingOutput;
-
-#[derive(Debug, Serialize)]
+/// Output from the flash-lite word-fill guard.
+#[derive(Debug, Deserialize)]
 #[gemini_schema]
-pub struct ReadingOutput {
-    pub segments: Vec<OutputSegment>,
+pub struct WordFillOutput {
+    /// One entry per input segment, in the same order.
+    pub segments: Vec<WordFillResultSegment>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Deserialize)]
 #[gemini_schema]
-pub struct OutputSegment {
+pub struct WordFillResultSegment {
     pub id: u64,
-    pub words: Vec<Word>,
-}
-
-#[derive(Debug, Serialize)]
-#[gemini_schema]
-pub struct Word {
-    pub text: String,
-    pub reading: String,
+    /// Populated word list. Must contain at least one element.
+    pub words: Vec<TranscriptWord>,
 }

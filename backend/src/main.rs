@@ -33,12 +33,12 @@ async fn main() -> anyhow::Result<()> {
         .context("failed to run migrations")
         .unwrap();
 
-    let gemini = llm::gemini::GeminiClient::new(
+    let llm = llm::provider::UnifiedModelClient::new(
         (trancription_api_key, translation_api_key),
         openrouter_api_key,
     );
 
-    let state = AppState::new(pool, gemini, jwt_secret);
+    let state = AppState::new(pool, llm, jwt_secret);
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:8080").await.unwrap();
 

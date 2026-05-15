@@ -1,7 +1,9 @@
 pub mod api;
+pub mod audio;
 pub mod constants;
 pub mod db;
 pub mod llm;
 pub mod logger;
 pub mod streaming;
+pub mod transcribe;
 pub mod types;

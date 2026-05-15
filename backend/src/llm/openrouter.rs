@@ -2,26 +2,30 @@ use anyhow::Result;
 use base64::{Engine, engine::general_purpose::STANDARD};
 use futures::StreamExt;
 use reqwest::Client as HttpClient;
+use serde::de::DeserializeOwned;
 use serde_json::Value;
 use tokio::sync::mpsc;
 
-use crate::{constants, llm::common::Model, types::transcript::ComplexTranscriptOutput};
-use gemini_client_api::gemini::utils::GeminiSchema;
-
 const OPENROUTER_CHAT_URL: &str = "https://openrouter.ai/api/v1/chat/completions";
 
-/// Streams transcription via OpenRouter using the OpenAI-compatible
-/// `/v1/chat/completions` endpoint with `stream: true`.
+// ---------------------------------------------------------------------------
+// Streaming
+// ---------------------------------------------------------------------------
+
+/// Streams a request via OpenRouter's OpenAI-compatible `/v1/chat/completions`
+/// endpoint with `stream: true`.
 ///
-/// Audio is always sent as inline base64. The format field
-/// is derived from the MIME type (e.g. `audio/webm` → `"webm"`).
-pub(super) async fn transcribe_as_stream(
+/// Audio is always sent as inline base64.  The format field is derived from
+/// the MIME type (e.g. `audio/webm` → `"webm"`).
+pub async fn stream(
     http: &HttpClient,
     api_key: &str,
+    model: &str,
+    system_prompt: &str,
+    schema: Option<Value>,
     bytes: &[u8],
     mime_type: &str,
-    chunk_tx: &mpsc::Sender<Result<String>>,
-) {
+) -> Result<mpsc::Receiver<Result<String>>> {
     let format = mime_type
         .split('/')
         .nth(1)
@@ -33,151 +37,206 @@ pub(super) async fn transcribe_as_stream(
 
     let b64 = STANDARD.encode(bytes);
 
-    let json_schema = gemini_to_json_schema(ComplexTranscriptOutput::gemini_schema());
+    let content = vec![
+        serde_json::json!({
+            "type": "text",
+            "text": system_prompt,
+        }),
+        serde_json::json!({
+            "type": "input_audio",
+            "input_audio": { "data": b64, "format": format }
+        }),
+    ];
 
-    let body = serde_json::json!({
-        "model": Model::TranscriptionModel.as_str(),
+    let mut body = serde_json::json!({
+        "model": model,
         "stream": true,
-        "response_format": {
-            "type": "json_schema",
-            "json_schema": {
-                "name": "ComplexTranscriptOutput",
-                "strict": true,
-                "schema": json_schema
-            }
-        },
         "messages": [
-            {
-                "role": "user",
-                "content": [
-                    {
-                        "type": "text",
-                        "text": constants::TRANSCRIPTION_SYSTEM_PROMPT
-                    },
-                    {
-                        "type": "input_audio",
-                        "input_audio": {
-                            "data": b64,
-                            "format": format
-                        }
-                    }
-                ]
-            }
+            { "role": "user", "content": content }
         ]
     });
 
-    tracing::info!(
-        mime_type = %mime_type,
-        format = %format,
-        model = Model::TranscriptionModel.as_str(),
-        "starting OpenRouter fallback transcription stream"
-    );
+    if let Some(s) = schema {
+        body["response_format"] = serde_json::json!({
+            "type": "json_schema",
+            "json_schema": {
+                "name": "Output",
+                "strict": true,
+                "schema": gemini_to_json_schema(s)
+            }
+        });
+    }
 
-    let resp = match http
+    let resp = http
         .post(OPENROUTER_CHAT_URL)
         .header("Authorization", format!("Bearer {api_key}"))
         .header("Content-Type", "application/json")
         .json(&body)
         .send()
         .await
-    {
-        Ok(r) => r,
-        Err(e) => {
-            let _ = chunk_tx
-                .send(Err(anyhow::anyhow!("OpenRouter request failed: {e}")))
-                .await;
-            return;
-        }
-    };
+        .map_err(|e| anyhow::anyhow!("OpenRouter request failed: {e}"))?;
 
     let status = resp.status();
     if !status.is_success() {
         let body_text = resp.text().await.unwrap_or_default();
-        let _ = chunk_tx
-            .send(Err(anyhow::anyhow!(
-                "OpenRouter returned HTTP {status}: {body_text}"
-            )))
-            .await;
-        return;
+        anyhow::bail!("OpenRouter returned HTTP {status}: {body_text}");
     }
 
-    // Parse the SSE stream. Each line that starts with "data: " carries a JSON
-    // object with `choices[0].delta.content`.
-    // The stream ends with "data: [DONE]".
-    let mut byte_stream = resp.bytes_stream();
-    let mut leftover = String::new();
-    let mut chunk_count = 0usize;
-    let mut total_text_bytes = 0usize;
+    let (tx, rx) = mpsc::channel(64);
 
-    while let Some(chunk_result) = byte_stream.next().await {
-        let raw = match chunk_result {
-            Ok(b) => b,
-            Err(e) => {
-                let _ = chunk_tx
-                    .send(Err(anyhow::anyhow!("OpenRouter stream read error: {e}")))
-                    .await;
-                return;
-            }
-        };
+    tokio::spawn(async move {
+        let mut byte_stream = resp.bytes_stream();
+        let mut leftover = String::new();
 
-        // Append the new bytes to any partial line carried over from the previous chunk.
-        leftover.push_str(&String::from_utf8_lossy(&raw));
-
-        // Process all complete SSE lines.
-        while let Some(newline_pos) = leftover.find('\n') {
-            let line = leftover[..newline_pos].trim_end_matches('\r').to_owned();
-            leftover = leftover[newline_pos + 1..].to_owned();
-
-            let data = match line.strip_prefix("data: ") {
-                Some(d) => d,
-                None => continue, // comment line, event:, id:, or blank
+        while let Some(chunk_result) = byte_stream.next().await {
+            let raw = match chunk_result {
+                Ok(b) => b,
+                Err(e) => {
+                    let _ = tx
+                        .send(Err(anyhow::anyhow!("OpenRouter stream read error: {e}")))
+                        .await;
+                    return;
+                }
             };
 
-            if data == "[DONE]" {
-                tracing::info!(
-                    chunks = chunk_count,
-                    total_text_bytes,
-                    "OpenRouter transcription stream complete"
-                );
-                return;
-            }
+            leftover.push_str(&String::from_utf8_lossy(&raw));
 
-            // Extract the delta content from the SSE JSON payload.
-            // The path is: choices[0].delta.content
-            let text = serde_json::from_str::<serde_json::Value>(data)
-                .ok()
-                .and_then(|v| {
-                    v["choices"][0]["delta"]["content"]
-                        .as_str()
-                        .map(|s| s.to_owned())
-                })
-                .unwrap_or_default();
+            while let Some(newline_pos) = leftover.find('\n') {
+                let line = leftover[..newline_pos].trim_end_matches('\r').to_owned();
+                leftover = leftover[newline_pos + 1..].to_owned();
 
-            if !text.is_empty() {
-                total_text_bytes += text.len();
-                chunk_count += 1;
-                tracing::debug!(
-                    chunk = chunk_count,
-                    text_len = text.len(),
-                    "OpenRouter chunk received"
-                );
-                if chunk_tx.send(Ok(text)).await.is_err() {
-                    tracing::warn!(
-                        chunk = chunk_count,
-                        "chunk receiver dropped, aborting OpenRouter stream"
-                    );
+                let data = match line.strip_prefix("data: ") {
+                    Some(d) => d,
+                    None => continue,
+                };
+
+                if data == "[DONE]" {
+                    return;
+                }
+
+                let text = serde_json::from_str::<Value>(data)
+                    .ok()
+                    .and_then(|v| {
+                        v["choices"][0]["delta"]["content"]
+                            .as_str()
+                            .map(|s| s.to_owned())
+                    })
+                    .unwrap_or_default();
+
+                if !text.is_empty() && tx.send(Ok(text)).await.is_err() {
                     return;
                 }
             }
         }
+    });
+
+    Ok(rx)
+}
+
+// ---------------------------------------------------------------------------
+// Non-streaming JSON
+// ---------------------------------------------------------------------------
+
+pub async fn ask_json<T>(
+    http: &HttpClient,
+    api_key: &str,
+    model: &str,
+    system_prompt: &str,
+    schema: Option<Value>,
+    user_content: String,
+) -> Result<T>
+where
+    T: DeserializeOwned,
+{
+    let mut body = serde_json::json!({
+        "model": model,
+        "stream": false,
+        "messages": [
+            { "role": "system", "content": system_prompt },
+            { "role": "user", "content": user_content }
+        ]
+    });
+
+    if let Some(s) = schema {
+        body["response_format"] = serde_json::json!({
+            "type": "json_schema",
+            "json_schema": {
+                "name": "Output",
+                "strict": true,
+                "schema": gemini_to_json_schema(s)
+            }
+        });
     }
 
-    tracing::info!(
-        chunks = chunk_count,
-        total_text_bytes,
-        "OpenRouter transcription stream complete"
-    );
+    let resp = http
+        .post(OPENROUTER_CHAT_URL)
+        .header("Authorization", format!("Bearer {api_key}"))
+        .header("Content-Type", "application/json")
+        .json(&body)
+        .send()
+        .await
+        .map_err(|e| anyhow::anyhow!("OpenRouter request failed: {e}"))?;
+
+    let status = resp.status();
+    if !status.is_success() {
+        let text = resp.text().await.unwrap_or_default();
+        anyhow::bail!("OpenRouter returned HTTP {status}: {text}");
+    }
+
+    let json: Value = resp.json().await?;
+    let content = json["choices"][0]["message"]["content"]
+        .as_str()
+        .ok_or_else(|| anyhow::anyhow!("OpenRouter response missing content"))?;
+
+    Ok(serde_json::from_str(content)?)
 }
+
+// ---------------------------------------------------------------------------
+// Non-streaming plain text
+// ---------------------------------------------------------------------------
+
+pub async fn ask_text(
+    http: &HttpClient,
+    api_key: &str,
+    model: &str,
+    system_prompt: &str,
+    user_content: String,
+) -> Result<String> {
+    let body = serde_json::json!({
+        "model": model,
+        "stream": false,
+        "messages": [
+            { "role": "system", "content": system_prompt },
+            { "role": "user", "content": user_content }
+        ]
+    });
+
+    let resp = http
+        .post(OPENROUTER_CHAT_URL)
+        .header("Authorization", format!("Bearer {api_key}"))
+        .header("Content-Type", "application/json")
+        .json(&body)
+        .send()
+        .await
+        .map_err(|e| anyhow::anyhow!("OpenRouter request failed: {e}"))?;
+
+    let status = resp.status();
+    if !status.is_success() {
+        let text = resp.text().await.unwrap_or_default();
+        anyhow::bail!("OpenRouter returned HTTP {status}: {text}");
+    }
+
+    let json: Value = resp.json().await?;
+    let content = json["choices"][0]["message"]["content"]
+        .as_str()
+        .ok_or_else(|| anyhow::anyhow!("OpenRouter response missing content"))?;
+
+    Ok(content.to_string())
+}
+
+// ---------------------------------------------------------------------------
+// JSON-schema converter (Gemini → OpenAI)
+// ---------------------------------------------------------------------------
 
 fn gemini_to_json_schema(v: Value) -> Value {
     match v {
@@ -203,7 +262,6 @@ fn gemini_to_json_schema(v: Value) -> Value {
             }
 
             map.remove("nullable");
-
             Value::Object(map)
         }
         other => other,

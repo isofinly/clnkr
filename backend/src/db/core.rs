@@ -289,3 +289,71 @@ pub async fn get_translations_count(pool: &PgPool) -> Result<i64> {
         .await?;
     Ok(count.count.unwrap_or(0))
 }
+
+// ---------------------------------------------------------------------------
+// Chunk-level storage
+// ---------------------------------------------------------------------------
+
+pub async fn upsert_chunk(
+    pool: &PgPool,
+    audio_signature: &str,
+    chunk_index: i32,
+    start_seconds: f64,
+    end_seconds: f64,
+    segments_json: &serde_json::Value,
+    speakers_json: &serde_json::Value,
+    summary: Option<&str>,
+    stitched: bool,
+) -> Result<()> {
+    sqlx::query!(
+        r#"
+        INSERT INTO transcription_chunks
+            (audio_signature, chunk_index, start_seconds, end_seconds,
+             segments_json, speakers_json, summary, stitched)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        ON CONFLICT (audio_signature, chunk_index)
+        DO UPDATE SET
+            start_seconds = EXCLUDED.start_seconds,
+            end_seconds   = EXCLUDED.end_seconds,
+            segments_json = EXCLUDED.segments_json,
+            speakers_json = EXCLUDED.speakers_json,
+            summary       = EXCLUDED.summary,
+            stitched      = EXCLUDED.stitched,
+            updated_at    = NOW()
+        "#,
+        audio_signature,
+        chunk_index,
+        start_seconds,
+        end_seconds,
+        segments_json,
+        speakers_json,
+        summary,
+        stitched
+    )
+    .execute(pool)
+    .await?;
+    Ok(())
+}
+
+pub async fn get_chunks(
+    pool: &PgPool,
+    audio_signature: &str,
+) -> Result<Vec<serde_json::Value>> {
+    let rows = sqlx::query_scalar!(
+        "SELECT segments_json FROM transcription_chunks WHERE audio_signature = $1 ORDER BY chunk_index",
+        audio_signature
+    )
+    .fetch_all(pool)
+    .await?;
+    Ok(rows)
+}
+
+pub async fn delete_chunks(pool: &PgPool, audio_signature: &str) -> Result<()> {
+    sqlx::query!(
+        "DELETE FROM transcription_chunks WHERE audio_signature = $1",
+        audio_signature
+    )
+    .execute(pool)
+    .await?;
+    Ok(())
+}
