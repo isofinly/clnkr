@@ -10,11 +10,11 @@ export const ASCII_LOGO = `
     |   (  )   |
     '----||----'
     /----||----\\
-   / .--'  '--.\\
-  /_/   CLNKR  \\_\\
-  |   |      |  |
-  |   |      |  |
-  |___|      |__|
+   / .--'  '--. \\
+  /_/  CLNKR   \\_\\
+  |   |      |   |
+  |   |      |   |
+  |___|      |___|
    \\_/        \\_/
 `;
 
@@ -30,6 +30,5 @@ export const SPEAKER_COLORS = [
   "#d19a66",
   "#abb2bf",
 ];
-
 
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080";

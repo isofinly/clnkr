@@ -10,6 +10,8 @@ type Props = {
   isTranscribing: boolean;
   streamStatus: StreamStatus;
   streamError: string;
+  totalChunks: number;
+  currentChunk: number;
   translationEntries: TranslationEntry[];
   activeTranslationEntry: TranslationEntry | null;
   onSelect: (i: number) => void;
@@ -58,6 +60,8 @@ export default function Sidebar({
   isTranscribing,
   streamStatus,
   streamError,
+  totalChunks,
+  currentChunk,
   translationEntries,
   activeTranslationEntry,
   onSelect,
@@ -234,6 +238,11 @@ export default function Sidebar({
         <div>
           stream:{" "}
           <span className={`stat-value${streamError ? " error" : ""}`}>{streamStatus}</span>
+          {totalChunks > 0 && (
+            <span className="stat-value" style={{ marginLeft: 8 }}>
+              chunk {currentChunk}/{totalChunks}
+            </span>
+          )}
         </div>
         {activeFile && (
           <div>segments: <span className="stat-value">{activeFile.transcript.segments.length}</span></div>

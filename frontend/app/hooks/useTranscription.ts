@@ -1,8 +1,8 @@
 "use client";
 import { useState, useRef, useCallback } from "react";
-import { Transcript, TranscriptFile, StreamStatus, RawSegment } from "../types";
+import { Transcript, TranscriptFile, StreamStatus } from "../types";
 import { API_BASE_URL } from "../constants";
-import { parseSseBlock, normaliseTranscript, normaliseSegment } from "../lib/utils";
+import { parseSseBlock, normaliseTranscript } from "../lib/utils";
 import { authHeaders, clearToken } from "../lib/auth";
 
 export type ModelType = "gemini-flash" | "gemini-flash-lite";
@@ -19,8 +19,8 @@ export function useTranscription(onUnauthorized: () => void) {
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [streamStatus, setStreamStatus] = useState<StreamStatus>("idle");
   const [streamError, setStreamError] = useState("");
-  const [isFallback, setIsFallback] = useState(false);
-  const streamSegmentCounterRef = useRef(0);
+  const [totalChunks, setTotalChunks] = useState(0);
+  const [currentChunk, setCurrentChunk] = useState(0);
 
   const loadMock = async (path: string) => {
     const res = await fetch(path);
@@ -49,8 +49,9 @@ export function useTranscription(onUnauthorized: () => void) {
     };
 
     setStreamError("");
-    setIsFallback(false);
     setStreamStatus("uploading");
+    setTotalChunks(0);
+    setCurrentChunk(0);
     setIsTranscribing(true);
 
     const newIndex = files.length;
@@ -100,33 +101,14 @@ export function useTranscription(onUnauthorized: () => void) {
           if (!parsed) continue;
 
           if (parsed.event === "status") {
-            setStreamStatus(String(parsed.data.message ?? "working").toLowerCase());
-            continue;
-          }
-
-          if (parsed.event === "fallback") {
-            setIsFallback(true);
-            continue;
-          }
-
-          // chunk events carry raw JSON text — we accumulate but don't render yet
-          if (parsed.event === "chunk") continue;
-
-          if (parsed.event === "segment") {
-            const seg = normaliseSegment(parsed.data as unknown as RawSegment);
-            setFiles((prev) => {
-              const updated = [...prev];
-              const file = updated[newIndex];
-              if (!file) return prev;
-              updated[newIndex] = {
-                ...file,
-                transcript: {
-                  ...file.transcript,
-                  segments: [...file.transcript.segments, seg],
-                },
-              };
-              return updated;
-            });
+            const msg = String(parsed.data.message ?? "working");
+            setStreamStatus(msg);
+            if (typeof parsed.data.total_chunks === "number") {
+              setTotalChunks(parsed.data.total_chunks as number);
+            }
+            if (typeof parsed.data.chunk_index === "number") {
+              setCurrentChunk((parsed.data.chunk_index as number) + 1);
+            }
             continue;
           }
 
@@ -147,7 +129,7 @@ export function useTranscription(onUnauthorized: () => void) {
             setStreamStatus("error");
             setFiles((prev) => {
               const existing = prev[newIndex];
-              if (!existing || existing.transcript.segments.length > 0) return prev;
+              if (!existing) return prev;
               return prev.filter((_, i) => i !== newIndex);
             });
             setActiveFileIndex((cur) => {
@@ -166,7 +148,7 @@ export function useTranscription(onUnauthorized: () => void) {
         setStreamStatus("error");
         setFiles((prev) => {
           const existing = prev[newIndex];
-          if (!existing || existing.transcript.segments.length > 0) return prev;
+          if (!existing) return prev;
           return prev.filter((_, i) => i !== newIndex);
         });
         setActiveFileIndex((cur) => {
@@ -182,7 +164,7 @@ export function useTranscription(onUnauthorized: () => void) {
       }
       setFiles((prev) => {
         const existing = prev[newIndex];
-        if (!existing || existing.transcript.segments.length > 0) return prev;
+        if (!existing) return prev;
         return prev.filter((_, i) => i !== newIndex);
       });
       setActiveFileIndex((cur) => {
@@ -271,7 +253,8 @@ export function useTranscription(onUnauthorized: () => void) {
     isTranscribing,
     streamStatus,
     streamError,
-    isFallback,
+    totalChunks,
+    currentChunk,
     loadMock,
     fetchLibrary,
     transcribeAudio,

@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useTranscription, ModelType, WordsMode } from "./hooks/useTranscription";
 import { useTranslation } from "./hooks/useTranslation";
 import { getToken, clearToken } from "./lib/auth";
@@ -9,7 +9,6 @@ import Sidebar from "./components/Sidebar";
 import SegmentView from "./components/SegmentView";
 import Footer from "./components/Footer";
 import HelpModal from "./components/HelpModal";
-import FallbackModal from "./components/FallbackModal";
 import TranslationPanel from "./components/TranslationPanel";
 
 type LogoMode = "idle" | "streaming" | "done";
@@ -34,7 +33,8 @@ export default function App() {
     isTranscribing,
     streamStatus,
     streamError,
-    isFallback,
+    totalChunks,
+    currentChunk,
     loadMock,
     fetchLibrary: fetchTranscriptions,
     transcribeAudio,
@@ -68,14 +68,6 @@ export default function App() {
   const activeFile = files[activeFileIndex];
 
   const [showHelp, setShowHelp] = useState(false);
-  const [showFallback, setShowFallback] = useState(false);
-
-  // Auto-show the fallback modal once when the backend switches providers.
-  const prevFallback = useRef(false);
-  useEffect(() => {
-    if (isFallback && !prevFallback.current) setShowFallback(true);
-    prevFallback.current = isFallback;
-  }, [isFallback]);
   const [modelType, setModelType] = useState<ModelType>("gemini-flash");
   const [wordsMode, setWordsMode] = useState<WordsMode>("words");
   // Index of the segment the user last clicked; -1 means none selected.
@@ -164,7 +156,6 @@ export default function App() {
         />
 
         {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
-        {showFallback && <FallbackModal onClose={() => setShowFallback(false)} />}
 
         <main style={{ flex: 1, display: "flex", minHeight: 0, position: "relative" }}>
           <Sidebar
@@ -173,6 +164,8 @@ export default function App() {
             isTranscribing={isTranscribing}
             streamStatus={streamStatus}
             streamError={streamError}
+            totalChunks={totalChunks}
+            currentChunk={currentChunk}
             translationEntries={translationEntries}
             activeTranslationEntry={activeEntry}
             onSelect={selectFile}
